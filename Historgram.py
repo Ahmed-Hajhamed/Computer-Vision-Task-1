@@ -15,7 +15,6 @@ def compute_histogram(image):
 def convert_to_grayscale(image_path: str):
     image = cv2.imread(image_path)  # Reads in BGR format
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Convert to RGB
-
     red_channel, green_channel, blue_channel = image[:, :, 0], image[:, :, 1], image[:, :, 2]
     gray_image = (0.299 * red_channel + 0.587 * green_channel + 0.114 * blue_channel).astype(np.uint8)
     return gray_image, red_channel, green_channel, blue_channel
@@ -29,7 +28,7 @@ def compute_distribution_curve(image, histogram):
     probability_distribution_curve = histogram / total_pixels
     return probability_distribution_curve
 
-def compute_cumulative_distribution_function (histogram):
+def compute_cumulative_distribution_function(image, histogram):
     cumulative_distribution_function = [sum(histogram[:i+1]) for i in range(256)]
     cdf_min = min(cumulative_distribution_function)
 
@@ -50,11 +49,11 @@ def equalize_image(image, normalized_cumulative_distribution_function):
 
 histogram = compute_histogram(image)
 pdf = compute_distribution_curve(image, histogram)
-cdf = compute_cumulative_distribution_function(histogram)
+cdf = compute_cumulative_distribution_function(image, histogram)
 equalized_image = equalize_image(image, cdf)
 equalized_histogram = compute_histogram(equalized_image)
 equalized_pdf = compute_distribution_curve(equalized_image, equalized_histogram)
-equalized_cdf = compute_cumulative_distribution_function(equalized_histogram)
+equalized_cdf = compute_cumulative_distribution_function(image, equalized_histogram)
 
 # Display the original image
 plt.figure(figsize=(12, 8))
