@@ -1,10 +1,11 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QComboBox, QSlider, QLabel, QGridLayout, QRadioButton, QCheckBox, QFrame
+    QComboBox, QSlider, QLabel, QGridLayout, QRadioButton, QStackedWidget, QFrame
 )
 from PyQt5.QtCore import Qt
-# from qt_material import apply_stylesheet
+from PyQt5.QtGui import QFont
+from qt_material import apply_stylesheet
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -59,10 +60,17 @@ class ImageProcessingUI(QMainWindow):
         # Add panels to main layout
         main_layout.addLayout(left_panel, 1)       # Left Panel
         main_layout.addLayout(central_area, 3)     # Stacked Center & Right Panels
+        
+        self.main_page = QWidget()
+        self.main_page.setLayout(main_layout)
 
-        container = QWidget()
-        container.setLayout(main_layout)
-        self.setCentralWidget(container)
+        self.hybrid_page = QWidget()
+        self.init_hybrid_page()
+
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.addWidget(self.main_page)
+        self.stacked_widget.addWidget(self.hybrid_page)
+        self.setCentralWidget(self.stacked_widget)
 
     def init_left_panel(self, layout):
         """Initialize the left panel with controls and sliders."""
@@ -172,7 +180,8 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(self.freq_button)
 
         # Hybrid Images
-        self.hybrid_button = QPushButton("Create Hybrid Image")
+        self.hybrid_button = QPushButton("Hybrid Image")
+        self.hybrid_button.clicked.connect(self.open_hybrid_page)
         layout.addWidget(self.hybrid_button)
 
     def init_right_panel(self,layout):
@@ -190,11 +199,83 @@ class ImageProcessingUI(QMainWindow):
         layout_it.addWidget(self.equalized_canvas, 1, 1)
 
         layout.addLayout(layout_it)
+    
+
+    def init_hybrid_page(self):
+        layout = QHBoxLayout()
+
+        # input_layout = QVBoxLayout()
+
+        
+        # Image Upload Section
+        upload_layout = QVBoxLayout()
+
+        # First Image
+        first_image_layout = QVBoxLayout()
+        self.first_image_label = QLabel("First Image")
+        self.first_image_label.setFixedSize(300, 300)
+        first_image_layout.addWidget(self.first_image_label)
+        first_image_button = QPushButton("Load First Image")
+        # first_image_button.clicked.connect(lambda: self.load_image_for_hybrid(1))
+        first_image_button.setFixedHeight(30)
+        first_image_layout.addWidget(first_image_button)
+        upload_layout.addLayout(first_image_layout)
+
+        # Second Image
+        second_image_layout = QVBoxLayout()
+        self.second_image_label = QLabel("Second Image")
+        self.second_image_label.setFixedSize(300, 300)
+        second_image_layout.addWidget(self.second_image_label)
+        second_image_button = QPushButton("Load Second Image")
+        # second_image_button.clicked.connect(lambda: self.load_image_for_hybrid(2))
+        second_image_button.setFixedHeight(30)
+        second_image_layout.addWidget(second_image_button)
+        upload_layout.addLayout(second_image_layout)
+
+        layout.addLayout(upload_layout)
+
+        # Hybrid Image Section
+        
+        hybrid_layout = QVBoxLayout()
+        
+        create_hybrid_button = QPushButton("Create Hybrid Image")
+        # create_hybrid_button.clicked.connect(self.create_hybrid_image)
+        create_hybrid_button.setFixedHeight(30)
+        hybrid_layout.addWidget(create_hybrid_button)
+        
+        
+        self.hybrid_image_label = QLabel("Hybrid Image")
+        self.hybrid_image_label.setFixedSize(300, 300)
+        hybrid_layout.addWidget(self.hybrid_image_label)
+    
+    
+        # Back Button
+        back_button = QPushButton("Back to Main Page")
+        back_button.clicked.connect(self.back_to_main_page)
+        back_button.setFixedHeight(30)
+        hybrid_layout.addWidget(back_button)
+        
+        layout.addLayout(hybrid_layout)
+        
+        self.hybrid_page.setLayout(layout)
+
+        # Initialize variables
+        self.first_image = None
+        self.second_image = None
+        self.hybrid_image = None
 
 
     def update_slider_label(self, value, label):
         """Update the label with the slider's current value."""
         label.setText(str(value))
+    
+    def open_hybrid_page(self):
+        """Switch to the hybrid image page."""
+        self.stacked_widget.setCurrentIndex(1)
+
+    def back_to_main_page(self):
+        """Switch back to the main page."""
+        self.stacked_widget.setCurrentIndex(0)
 
 
 if __name__ == "__main__":
