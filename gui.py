@@ -75,8 +75,15 @@ class ImageProcessingUI(QMainWindow):
     def init_left_panel(self, layout):
         """Initialize the left panel with controls and sliders."""
         # Load Image Button
+        layout_load = QHBoxLayout()
+
         self.load_button = QPushButton("Load Image")
-        layout.addWidget(self.load_button)
+        layout_load.addWidget(self.load_button)
+
+        self.rest = QPushButton("Reset Image")
+        layout_load.addWidget(self.rest)
+
+        layout.addLayout(layout_load)
 
         self.separator_one = create_line(horizontal= True)
         layout.addWidget(self.separator_one)
@@ -204,9 +211,6 @@ class ImageProcessingUI(QMainWindow):
     def init_hybrid_page(self):
         layout = QHBoxLayout()
 
-        # input_layout = QVBoxLayout()
-
-        
         # Image Upload Section
         upload_layout = QVBoxLayout()
 
@@ -216,7 +220,7 @@ class ImageProcessingUI(QMainWindow):
         self.first_image_label.setFixedSize(300, 300)
         first_image_layout.addWidget(self.first_image_label)
         first_image_button = QPushButton("Load First Image")
-        # first_image_button.clicked.connect(lambda: self.load_image_for_hybrid(1))
+
         first_image_button.setFixedHeight(30)
         first_image_layout.addWidget(first_image_button)
         upload_layout.addLayout(first_image_layout)
@@ -226,8 +230,8 @@ class ImageProcessingUI(QMainWindow):
         self.second_image_label = QLabel("Second Image")
         self.second_image_label.setFixedSize(300, 300)
         second_image_layout.addWidget(self.second_image_label)
+
         second_image_button = QPushButton("Load Second Image")
-        # second_image_button.clicked.connect(lambda: self.load_image_for_hybrid(2))
         second_image_button.setFixedHeight(30)
         second_image_layout.addWidget(second_image_button)
         upload_layout.addLayout(second_image_layout)
@@ -239,7 +243,6 @@ class ImageProcessingUI(QMainWindow):
         hybrid_layout = QVBoxLayout()
         
         create_hybrid_button = QPushButton("Create Hybrid Image")
-        # create_hybrid_button.clicked.connect(self.create_hybrid_image)
         create_hybrid_button.setFixedHeight(30)
         hybrid_layout.addWidget(create_hybrid_button)
         
