@@ -80,8 +80,8 @@ class ImageProcessingUI(QMainWindow):
         self.load_button = QPushButton("Load Image")
         layout_load.addWidget(self.load_button)
 
-        self.rest = QPushButton("Reset Image")
-        layout_load.addWidget(self.rest)
+        self.rest_button = QPushButton("Reset Image")
+        layout_load.addWidget(self.rest_button)
 
         layout.addLayout(layout_load)
 
@@ -219,10 +219,10 @@ class ImageProcessingUI(QMainWindow):
         self.first_image_label = QLabel("First Image")
         self.first_image_label.setFixedSize(300, 300)
         first_image_layout.addWidget(self.first_image_label)
-        first_image_button = QPushButton("Load First Image")
+        self.first_image_button = QPushButton("Load First Image")
 
-        first_image_button.setFixedHeight(30)
-        first_image_layout.addWidget(first_image_button)
+        self.first_image_button.setFixedHeight(30)
+        first_image_layout.addWidget(self.first_image_button)
         upload_layout.addLayout(first_image_layout)
 
         # Second Image
@@ -231,9 +231,9 @@ class ImageProcessingUI(QMainWindow):
         self.second_image_label.setFixedSize(300, 300)
         second_image_layout.addWidget(self.second_image_label)
 
-        second_image_button = QPushButton("Load Second Image")
-        second_image_button.setFixedHeight(30)
-        second_image_layout.addWidget(second_image_button)
+        self.second_image_button = QPushButton("Load Second Image")
+        self.second_image_button.setFixedHeight(30)
+        second_image_layout.addWidget(self.second_image_button)
         upload_layout.addLayout(second_image_layout)
 
         layout.addLayout(upload_layout)
@@ -242,9 +242,9 @@ class ImageProcessingUI(QMainWindow):
         
         hybrid_layout = QVBoxLayout()
         
-        create_hybrid_button = QPushButton("Create Hybrid Image")
-        create_hybrid_button.setFixedHeight(30)
-        hybrid_layout.addWidget(create_hybrid_button)
+        self.create_hybrid_button = QPushButton("Create Hybrid Image")
+        self.create_hybrid_button.setFixedHeight(30)
+        hybrid_layout.addWidget(self.create_hybrid_button)
         
         
         self.hybrid_image_label = QLabel("Hybrid Image")
