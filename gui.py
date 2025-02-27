@@ -293,6 +293,10 @@ class ImageProcessingUI(QMainWindow):
         radio_layout.addWidget(self.threshold_radio_global)
         radio_layout.addWidget(self.threshold_radio_local)
         
+        # Connect radio buttons to enable/disable sliders
+        self.threshold_radio_global.toggled.connect(self.update_threshold_controls)
+        self.threshold_radio_local.toggled.connect(self.update_threshold_controls)
+        
         # Global threshold slider with label in horizontal layout
         global_slider_layout = QHBoxLayout()
         self.threshold_slider = QSlider(Qt.Horizontal)
@@ -334,8 +338,21 @@ class ImageProcessingUI(QMainWindow):
         threshold_layout.addLayout(local_slider_layout)
         threshold_layout.addWidget(self.threshold_button)
         
+        # Initial state of sliders
+        self.update_threshold_controls()
+        
         threshold_group.setLayout(threshold_layout)
         return threshold_group
+
+    def update_threshold_controls(self):
+        """Enable/disable threshold sliders based on radio button selection"""
+        # Enable global threshold controls if global is selected
+        self.threshold_slider.setEnabled(self.threshold_radio_global.isChecked())
+        self.threshold_value.setEnabled(self.threshold_radio_global.isChecked())
+        
+        # Enable local threshold controls if local is selected
+        self.local_threshold_slider.setEnabled(self.threshold_radio_local.isChecked())
+        self.local_threshold_value.setEnabled(self.threshold_radio_local.isChecked())
 
 def update_slider_label(value, label):
         """Update the label with the slider's current value."""
