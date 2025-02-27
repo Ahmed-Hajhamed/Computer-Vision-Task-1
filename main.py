@@ -159,6 +159,7 @@ class ImageProcessing(ImageProcessingUI):
             self.update_display()
 
     def apply_thresholding(self):
+        self.check_processed_image()
         if self.threshold_radio_global.isChecked():
             self.processed_image = f.global_threshold(self.processed_image, self.threshold_slider.value())
         else:
