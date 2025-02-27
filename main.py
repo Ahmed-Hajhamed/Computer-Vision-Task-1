@@ -163,7 +163,8 @@ class ImageProcessing(ImageProcessingUI):
         if self.threshold_radio_global.isChecked():
             self.processed_image = f.global_threshold(self.processed_image, self.threshold_slider.value())
         else:
-            self.processed_image = f.local_threshold(self.processed_image, self.threshold_slider.value())
+            img = f.gray_image(self.processed_image) if len(self.processed_image.shape) == 3 else self.processed_image
+            self.processed_image = f.local_threshold(img, self.threshold_slider.value())
         self.update_display()
 
     def apply_frequency_filter(self):
