@@ -2,7 +2,6 @@ import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
-from sympy import Q
 from  gui import ImageProcessingUI
 import cv2
 from qt_material import apply_stylesheet
