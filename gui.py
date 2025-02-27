@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QComboBox, QSlider, QLabel, QGridLayout, QRadioButton, QStackedWidget, QFrame
+    QComboBox, QSlider, QLabel, QGridLayout, QRadioButton, QStackedWidget, QFrame, QGroupBox
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
@@ -178,21 +178,7 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(self.normalize_button)
 
         # Thresholding
-        self.threshold_radio_global = QRadioButton("Global Thresholding")
-        self.threshold_radio_local = QRadioButton("Local Thresholding")
-        layout.addWidget(self.threshold_radio_global)
-        layout.addWidget(self.threshold_radio_local)
-
-        threshold_slider_layout = QHBoxLayout()
-        self.threshold_slider = create_slider(0, 255, 128)
-        self.threshold_value_label = QLabel("128")
-        self.threshold_slider.valueChanged.connect(lambda value: update_slider_label(value, self.threshold_value_label))
-        threshold_slider_layout.addWidget(self.threshold_slider)
-        threshold_slider_layout.addWidget(self.threshold_value_label)
-        layout.addLayout(threshold_slider_layout)
-
-        self.threshold_button = QPushButton("Apply Threshold")
-        layout.addWidget(self.threshold_button)
+        layout.addWidget(self.init_threshold_controls())
 
         # Color to Grayscale
         self.grayscale_button = QPushButton("Convert to Grayscale")
@@ -294,6 +280,62 @@ class ImageProcessingUI(QMainWindow):
     def back_to_main_page(self):
         """Switch back to the main page."""
         self.stacked_widget.setCurrentIndex(0)
+
+    def init_threshold_controls(self):
+        threshold_group = QGroupBox("Thresholding")
+        threshold_layout = QVBoxLayout()
+        
+        # Radio buttons in horizontal layout
+        radio_layout = QHBoxLayout()
+        self.threshold_radio_global = QRadioButton("Global")
+        self.threshold_radio_local = QRadioButton("Local")
+        self.threshold_radio_global.setChecked(True)
+        radio_layout.addWidget(self.threshold_radio_global)
+        radio_layout.addWidget(self.threshold_radio_local)
+        
+        # Global threshold slider with label in horizontal layout
+        global_slider_layout = QHBoxLayout()
+        self.threshold_slider = QSlider(Qt.Horizontal)
+        self.threshold_slider.setMinimum(0)
+        self.threshold_slider.setMaximum(255)
+        self.threshold_slider.setValue(127)
+        self.threshold_value = QLabel("127")  # Simplified label
+        self.threshold_value.setMinimumWidth(30)  # Ensure label has enough space
+        self.threshold_slider.valueChanged.connect(
+            lambda: self.threshold_value.setText(str(self.threshold_slider.value()))
+        )
+        global_slider_layout.addWidget(QLabel("Global:"))  # Short label
+        global_slider_layout.addWidget(self.threshold_slider)
+        global_slider_layout.addWidget(self.threshold_value)
+        
+        # Local threshold slider with label in horizontal layout
+        local_slider_layout = QHBoxLayout()
+        self.local_threshold_slider = QSlider(Qt.Horizontal)
+        self.local_threshold_slider.setMinimum(3)
+        self.local_threshold_slider.setMaximum(31)
+        self.local_threshold_slider.setValue(3)
+        self.local_threshold_slider.setSingleStep(2)
+        self.local_threshold_value = QLabel("3")  # Simplified label
+        self.local_threshold_value.setMinimumWidth(30)  # Ensure label has enough space
+        self.local_threshold_slider.valueChanged.connect(
+            lambda: self.local_threshold_value.setText(str(self.local_threshold_slider.value()))
+        )
+        local_slider_layout.addWidget(QLabel("Window:"))  # Short label
+        local_slider_layout.addWidget(self.local_threshold_slider)
+        local_slider_layout.addWidget(self.local_threshold_value)
+        
+        # Apply button
+        self.threshold_button = QPushButton("Apply Threshold")
+        
+        # Add all components to layout with minimal spacing
+        threshold_layout.setSpacing(5)  # Reduce vertical spacing
+        threshold_layout.addLayout(radio_layout)
+        threshold_layout.addLayout(global_slider_layout)
+        threshold_layout.addLayout(local_slider_layout)
+        threshold_layout.addWidget(self.threshold_button)
+        
+        threshold_group.setLayout(threshold_layout)
+        return threshold_group
 
 def update_slider_label(value, label):
         """Update the label with the slider's current value."""
