@@ -22,6 +22,42 @@ def create_label(text:str):
      label.setStyleSheet("")
      return label
 
+def create_slider(minimum:int, maximum:int, value:int, horizontal=True):
+    slider = QSlider(Qt.Horizontal) if horizontal else QSlider(Qt.Vertical)
+    slider.setMinimum(minimum)
+    slider.setMaximum(maximum)
+    slider.setValue(value)
+    return slider
+
+class image_hybrid:
+    def __init__(self):
+        self.image_layout = QVBoxLayout()
+
+        self.image_label = QLabel("Image")
+        self.image_label.setFixedSize(300, 300)
+        self.image_layout.addWidget(self.image_label)
+
+        first_h_button_layout = QHBoxLayout()
+        self.load_button = QPushButton("Load Image")
+        self.load_button.setFixedHeight(30)
+        first_h_button_layout.addWidget(self.load_button)
+        
+        self.filters = QComboBox()
+        self.filters.addItems(["low filter", "high filter"])
+        first_h_button_layout.addWidget(self.filters)
+
+        self.image_layout.addLayout(first_h_button_layout)
+        
+        h_slider_layout = QHBoxLayout()
+        self.slider = create_slider(0, 255, 128)
+        h_slider_layout.addWidget(self.slider)
+        self.slider_value = QLabel("128")
+        self.slider.valueChanged.connect(lambda value: update_slider_label(value, self.slider_value))
+        h_slider_layout.addWidget(self.slider_value)
+
+        self.image_layout.addLayout(h_slider_layout)
+
+
 class ImageProcessingUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -29,9 +65,9 @@ class ImageProcessingUI(QMainWindow):
         self.setGeometry(100, 100, 1200, 800)
 
         # Main layout
-        main_widget = QWidget(self)
-        self.setCentralWidget(main_widget)
-        main_layout = QHBoxLayout(main_widget)  # Main layout: Left + Right (stacked Center & Right)
+        # main_widget = QWidget(self)
+        # self.setCentralWidget(main_widget)
+        main_layout = QHBoxLayout()  
 
         # Left Panel (Controls)
         left_panel = QVBoxLayout()
@@ -44,18 +80,13 @@ class ImageProcessingUI(QMainWindow):
         center_panel = QVBoxLayout()
         self.original_label = QLabel("Original Image")
         self.processed_label = QLabel("Processed Image")
-        center_layout = QGridLayout()
-        center_layout.addWidget(self.original_label, 0, 0)
-        center_layout.addWidget(self.processed_label, 0, 1)
+        center_layout = QVBoxLayout()
+        center_layout.addWidget(self.original_label, 0, Qt.AlignCenter)
+        center_layout.addWidget(self.processed_label, 1, Qt.AlignCenter)
         center_panel.addLayout(center_layout)
-
-        # Right Panel (Empty for now)
-        right_panel = QVBoxLayout()
-        self.init_right_panel(right_panel)
 
         # Add Center and Right Panels to the central area
         central_area.addLayout(center_panel)  # Center Panel on top
-        central_area.addLayout(right_panel)   # Right Panel below
 
         # Add panels to main layout
         main_layout.addLayout(left_panel, 1)       # Left Panel
@@ -64,11 +95,15 @@ class ImageProcessingUI(QMainWindow):
         self.main_page = QWidget()
         self.main_page.setLayout(main_layout)
 
+        self.plot_page = QWidget()
+        self.init_plot_page()
+
         self.hybrid_page = QWidget()
         self.init_hybrid_page()
 
         self.stacked_widget = QStackedWidget()
         self.stacked_widget.addWidget(self.main_page)
+        self.stacked_widget.addWidget(self.plot_page)
         self.stacked_widget.addWidget(self.hybrid_page)
         self.setCentralWidget(self.stacked_widget)
 
@@ -85,9 +120,6 @@ class ImageProcessingUI(QMainWindow):
 
         layout.addLayout(layout_load)
 
-        self.separator_one = create_line(horizontal= True)
-        layout.addWidget(self.separator_one)
-
         # Noise Addition
         self.noise_combo = QComboBox()
         self.noise_combo.addItems(["Uniform", "Gaussian", "Salt & Pepper"])
@@ -95,11 +127,8 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(self.noise_combo)
 
         noise_slider_layout = QHBoxLayout()
-        self.noise_slider = QSlider(Qt.Horizontal)
-        self.noise_slider.setMinimum(0)
-        self.noise_slider.setMaximum(100)
-        self.noise_slider.setValue(50)
-        self.noise_slider.valueChanged.connect(lambda value: self.update_slider_label(value, self.noise_value_label))
+        self.noise_slider = create_slider(0, 100, 50)
+        self.noise_slider.valueChanged.connect(lambda value: update_slider_label(value, self.noise_value_label))
         self.noise_value_label = QLabel("50")
         noise_slider_layout.addWidget(self.noise_slider)
         noise_slider_layout.addWidget(self.noise_value_label)
@@ -108,9 +137,6 @@ class ImageProcessingUI(QMainWindow):
         self.add_noise_button = QPushButton("Add Noise")
         layout.addWidget(self.add_noise_button)
 
-        self.separator_two = create_line(horizontal= True)
-        layout.addWidget(self.separator_two)
-
         # Low Pass Filters
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["Average", "Gaussian", "Median"])
@@ -118,12 +144,9 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(self.filter_combo)
 
         filter_slider_layout = QHBoxLayout()
-        self.filter_slider = QSlider(Qt.Horizontal)
-        self.filter_slider.setMinimum(3)
-        self.filter_slider.setMaximum(15)
-        self.filter_slider.setValue(5)
+        self.filter_slider = create_slider(3, 15, 5)
         self.filter_slider.setSingleStep(2)
-        self.filter_slider.valueChanged.connect(lambda value: self.update_slider_label(value, self.filter_value_label))
+        self.filter_slider.valueChanged.connect(lambda value: update_slider_label(value, self.filter_value_label))
         self.filter_value_label = QLabel("5")
         filter_slider_layout.addWidget(self.filter_slider)
         filter_slider_layout.addWidget(self.filter_value_label)
@@ -143,6 +166,7 @@ class ImageProcessingUI(QMainWindow):
 
         # Histogram
         self.hist_button = QPushButton("Draw Histogram")
+        self.hist_button.clicked.connect(self.open_plot_page)
         layout.addWidget(self.hist_button)
 
         # Equalization
@@ -160,12 +184,9 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(self.threshold_radio_local)
 
         threshold_slider_layout = QHBoxLayout()
-        self.threshold_slider = QSlider(Qt.Horizontal)
-        self.threshold_slider.setMinimum(0)
-        self.threshold_slider.setMaximum(255)
-        self.threshold_slider.setValue(128)
-        self.threshold_slider.valueChanged.connect(lambda value: self.update_slider_label(value, self.threshold_value_label))
+        self.threshold_slider = create_slider(0, 255, 128)
         self.threshold_value_label = QLabel("128")
+        self.threshold_slider.valueChanged.connect(lambda value: update_slider_label(value, self.threshold_value_label))
         threshold_slider_layout.addWidget(self.threshold_slider)
         threshold_slider_layout.addWidget(self.threshold_value_label)
         layout.addLayout(threshold_slider_layout)
@@ -182,6 +203,14 @@ class ImageProcessingUI(QMainWindow):
         self.freq_combo.addItems(["High Pass", "Low Pass"])
         layout.addWidget(QLabel("Frequency Domain Filter:"))
         layout.addWidget(self.freq_combo)
+        
+        cutoff_slider_layout = QHBoxLayout()
+        self.cutoff_slider = create_slider(0, 255, 128)
+        self.cutoff_value_label = QLabel("128")
+        self.cutoff_slider.valueChanged.connect(lambda value: update_slider_label(value, self.cutoff_value_label))
+        cutoff_slider_layout.addWidget(self.cutoff_slider)
+        cutoff_slider_layout.addWidget(self.cutoff_value_label)
+        layout.addLayout(cutoff_slider_layout)
 
         self.freq_button = QPushButton("Apply Frequency Filter")
         layout.addWidget(self.freq_button)
@@ -191,21 +220,26 @@ class ImageProcessingUI(QMainWindow):
         self.hybrid_button.clicked.connect(self.open_hybrid_page)
         layout.addWidget(self.hybrid_button)
 
-    def init_right_panel(self,layout):
+    def init_plot_page(self):
         """Initialize the right panel with histograms and CDF/PDF plots."""
-        layout_it = QGridLayout()
-        
+
+        layout = QGridLayout()
         # Original Image Plot
         self.original_canvas = FigureCanvas(Figure(figsize=(5, 4)))
-        layout_it.addWidget(QLabel("Original Image Analysis"), 0, 0)
-        layout_it.addWidget(self.original_canvas, 1, 0)
+        layout.addWidget(QLabel("Original Image Analysis"), 0, 0)
+        layout.addWidget(self.original_canvas, 1, 0)
 
         # Equalized Image Plot
         self.equalized_canvas = FigureCanvas(Figure(figsize=(5, 4)))
-        layout_it.addWidget(QLabel("Equalized Image Analysis"), 0, 1)
-        layout_it.addWidget(self.equalized_canvas, 1, 1)
+        layout.addWidget(QLabel("Equalized Image Analysis"), 2, 0)
+        layout.addWidget(self.equalized_canvas, 3, 0)
 
-        layout.addLayout(layout_it)
+        # Back Button
+        back_button = QPushButton("Back to Main Page")
+        back_button.clicked.connect(self.back_to_main_page)
+        layout.addWidget(back_button, 4, 0, 1, 1)
+
+        self.plot_page.setLayout(layout)
     
 
     def init_hybrid_page(self):
@@ -215,26 +249,12 @@ class ImageProcessingUI(QMainWindow):
         upload_layout = QVBoxLayout()
 
         # First Image
-        first_image_layout = QVBoxLayout()
-        self.first_image_label = QLabel("First Image")
-        self.first_image_label.setFixedSize(300, 300)
-        first_image_layout.addWidget(self.first_image_label)
-        self.first_image_button = QPushButton("Load First Image")
-
-        self.first_image_button.setFixedHeight(30)
-        first_image_layout.addWidget(self.first_image_button)
-        upload_layout.addLayout(first_image_layout)
+        self.first_image_widget = image_hybrid()
+        upload_layout.addLayout(self.first_image_widget.image_layout)
 
         # Second Image
-        second_image_layout = QVBoxLayout()
-        self.second_image_label = QLabel("Second Image")
-        self.second_image_label.setFixedSize(300, 300)
-        second_image_layout.addWidget(self.second_image_label)
-
-        self.second_image_button = QPushButton("Load Second Image")
-        self.second_image_button.setFixedHeight(30)
-        second_image_layout.addWidget(self.second_image_button)
-        upload_layout.addLayout(second_image_layout)
+        self.second_image_widget = image_hybrid()
+        upload_layout.addLayout(self.second_image_widget.image_layout)
 
         layout.addLayout(upload_layout)
 
@@ -261,24 +281,23 @@ class ImageProcessingUI(QMainWindow):
         layout.addLayout(hybrid_layout)
         
         self.hybrid_page.setLayout(layout)
-
-        # Initialize variables
-        self.first_image = None
-        self.second_image = None
-        self.hybrid_image = None
-
-
-    def update_slider_label(self, value, label):
-        """Update the label with the slider's current value."""
-        label.setText(str(value))
     
     def open_hybrid_page(self):
         """Switch to the hybrid image page."""
+        print("test")
+        self.stacked_widget.setCurrentIndex(2)
+    
+    def open_plot_page(self):
+        """Switch to the plot page."""
         self.stacked_widget.setCurrentIndex(1)
 
     def back_to_main_page(self):
         """Switch back to the main page."""
         self.stacked_widget.setCurrentIndex(0)
+
+def update_slider_label(value, label):
+        """Update the label with the slider's current value."""
+        label.setText(str(value))
 
 
 if __name__ == "__main__":

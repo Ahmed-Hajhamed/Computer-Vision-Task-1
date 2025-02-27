@@ -5,7 +5,7 @@ from numpy.lib.stride_tricks import as_strided
 
 
 def add_uniform_noise( image, intensity):
-    noise = np.random.uniform(0, intensity * 255, image.shape)
+    noise = np.random.uniform(-intensity * 255, intensity * 255, image.shape)
     return np.clip(image + noise, 0, 255).astype(np.uint8)
 
 def add_gaussian_noise( image, intensity):
@@ -101,7 +101,7 @@ def prewitt_edge_detection(image):
 # Function for Image Normalization
 def normalize_image(image, new_min=0, new_max=255):
     old_min, old_max = np.min(image), np.max(image)
-    normalized = (image - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
+    normalized = ((image - old_min) / (old_max - old_min)) * (new_max - new_min) + new_min
     return normalized.astype(np.uint8)
 
 # Function for Global Thresholding
@@ -145,3 +145,49 @@ def frequency_filter(image, filter_type='low', cutoff=20):
     filtered_image = np.fft.ifft2(dft_ishift)
     
     return np.abs(filtered_image).astype(np.uint8)
+
+
+def compute_histogram(image):
+    histogram = [0] * 256
+    for row in image:
+        for pixel in row:
+            histogram[pixel] += 1
+    return np.array(histogram)
+
+def convert_to_grayscale(image):
+    red_channel, green_channel, blue_channel = image[:, :, 0], image[:, :, 1], image[:, :, 2]
+    gray_image = (0.299 * red_channel + 0.587 * green_channel + 0.114 * blue_channel).astype(np.uint8)
+    return gray_image, red_channel, green_channel, blue_channel
+
+def gray_image(image):
+    h, w = image.shape[:2]
+    converted_image = convert_to_grayscale(image)[0]
+    return converted_image.reshape(h, w)
+
+def recover_rgb_image(equalized_red_channel, equalized_green_channel, equalized_blue_channel):
+    equalized_rgb_image = np.stack((equalized_red_channel, equalized_green_channel, equalized_blue_channel), axis=2)
+    return equalized_rgb_image
+
+def compute_distribution_curve(image, histogram):
+    total_pixels = image.size 
+    probability_distribution_curve = histogram / total_pixels
+    return probability_distribution_curve
+
+def compute_cumulative_distribution_function(image, histogram):
+    cumulative_distribution_function = [sum(histogram[:i+1]) for i in range(256)]
+    cdf_min = min(cumulative_distribution_function)
+
+    normalized_cumulative_distribution_function =\
+          [(cumulative_distribution_function[i] - cdf_min) / (image.size - cdf_min) * 255 for i in range(256)]
+    
+    normalized_cumulative_distribution_function =\
+          np.round(normalized_cumulative_distribution_function).astype(np.uint8)
+    
+    return normalized_cumulative_distribution_function
+
+def equalize_image(image, normalized_cumulative_distribution_function):
+    equalized_image = np.zeros_like(image)
+    for i in range(image.shape[0]):
+        for j in range(image.shape[1]):
+            equalized_image[i, j] = normalized_cumulative_distribution_function[image[i, j]]
+    return equalized_image
