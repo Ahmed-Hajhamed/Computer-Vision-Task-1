@@ -71,7 +71,7 @@ class ImageProcessing(ImageProcessingUI):
         if len(img.shape) == 2:
             h, w = img.shape
             bytes_per_line = w
-            qt_image = QImage(img.data, w, h, bytes_per_line, QImage.Format_Grayscale8)
+            qt_image = QImage(bytes(img.data), w, h, bytes_per_line, QImage.Format_Grayscale8)
             pixmap = QPixmap.fromImage(qt_image)
             label.setPixmap(pixmap.scaled(400, 400, Qt.KeepAspectRatio))
         else:
@@ -159,17 +159,18 @@ class ImageProcessing(ImageProcessingUI):
             self.processed_image = f.gray_image(self.processed_image)
             self.update_display()
 
-    def apply_frequency_filter(self):
-        self.check_processed_image()
-        filter_type = self.freq_combo.currentText()
-        self.processed_image = f.frequency_filter(self.processed_image, filter_type, self.cutoff_slider.value())
-        self.update_display()
-    
     def apply_thresholding(self):
         if self.threshold_radio_global.isChecked():
             self.processed_image = f.global_threshold(self.processed_image, self.threshold_slider.value())
         else:
             self.processed_image = f.local_threshold(self.processed_image, self.threshold_slider.value())
+        self.update_display()
+
+    def apply_frequency_filter(self):
+        self.check_processed_image()
+        filter_type = self.freq_combo.currentText()
+        image =  f.gray_image(self.processed_image) if len(self.processed_image.shape) == 3 else self.processed_image
+        self.processed_image = f.frequency_filter(image, filter_type, int(self.cutoff_slider.value()))
         self.update_display()
 
 

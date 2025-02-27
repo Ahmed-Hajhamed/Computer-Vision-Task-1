@@ -124,17 +124,18 @@ def local_threshold(image, window_size):
     return thresholded_image.astype(np.uint8)
 
 # Function for Frequency Domain Filtering (High-pass and Low-pass)
-def frequency_filter(image, filter_type='low', cutoff=20):
+def frequency_filter(image, filter_type='Low Pass', cutoff=20):
+    print(cutoff)
     dft = np.fft.fft2(image)
     dft_shift = np.fft.fftshift(dft)
-    
+
     rows, cols = image.shape
     crow, ccol = rows // 2, cols // 2
     mask = np.zeros((rows, cols), np.uint8)
     
-    if filter_type == 'low':
+    if filter_type == 'Low Pass':
         mask[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff] = 1
-    elif filter_type == 'high':
+    elif filter_type == 'High Pass':
         mask[:crow - cutoff, :] = 1
         mask[crow + cutoff:, :] = 1
         mask[:, :ccol - cutoff] = 1
@@ -144,7 +145,7 @@ def frequency_filter(image, filter_type='low', cutoff=20):
     dft_ishift = np.fft.ifftshift(filtered_dft)
     filtered_image = np.fft.ifft2(dft_ishift)
     
-    return np.abs(filtered_image).astype(np.uint8)
+    return np.clip(np.abs(filtered_image), 0, 255).astype(np.uint8)
 
 
 def compute_histogram(image):
