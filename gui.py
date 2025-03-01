@@ -186,14 +186,18 @@ class ImageProcessingUI(QMainWindow):
 
         # Frequency Domain Filters
         self.freq_combo = QComboBox()
-        self.freq_combo.addItems(["High Pass", "Low Pass"])
+        self.freq_combo.addItems(["Low Pass", "High Pass"])
         layout.addWidget(QLabel("Frequency Domain Filter:"))
         layout.addWidget(self.freq_combo)
         
         cutoff_slider_layout = QHBoxLayout()
-        self.cutoff_slider = create_slider(0, 255, 128)
-        self.cutoff_value_label = QLabel("128")
-        self.cutoff_slider.valueChanged.connect(lambda value: update_slider_label(value, self.cutoff_value_label))
+        # Change slider range to percentage of image size (1-50%)
+        self.cutoff_slider = create_slider(1, 50, 10)  # Default 10%
+        self.cutoff_value_label = QLabel("10%")
+        self.cutoff_slider.valueChanged.connect(
+            lambda value: self.cutoff_value_label.setText(f"{value}%")
+        )
+        cutoff_slider_layout.addWidget(QLabel("Cutoff Radius:"))
         cutoff_slider_layout.addWidget(self.cutoff_slider)
         cutoff_slider_layout.addWidget(self.cutoff_value_label)
         layout.addLayout(cutoff_slider_layout)

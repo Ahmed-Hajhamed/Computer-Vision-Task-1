@@ -124,22 +124,30 @@ def local_threshold(image, window_size):
     return thresholded_image.astype(np.uint8)
 
 # Function for Frequency Domain Filtering (High-pass and Low-pass)
-def frequency_filter(image, filter_type='Low Pass', cutoff=20):
-    print(cutoff)
+def frequency_filter(image, filter_type='Low Pass', cutoff_percent=10):
+    """
+    Apply frequency domain filter with cutoff as percentage of image size
+    Args:
+        image: Input image
+        filter_type: 'Low Pass' or 'High Pass'
+        cutoff_percent: Cutoff frequency as percentage of image size (1-50%)
+    """
+    # Convert percentage to actual radius
+    rows, cols = image.shape
+    min_dimension = min(rows, cols)
+    cutoff = int((cutoff_percent / 100.0) * min_dimension)
+    
     dft = np.fft.fft2(image)
     dft_shift = np.fft.fftshift(dft)
-
-    rows, cols = image.shape
+    
     crow, ccol = rows // 2, cols // 2
     mask = np.zeros((rows, cols), np.uint8)
     
     if filter_type == 'Low Pass':
-        mask[crow - cutoff:crow + cutoff, ccol - cutoff:ccol + cutoff] = 1
+        mask[crow-cutoff:crow+cutoff, ccol-cutoff:ccol+cutoff] = 1
     elif filter_type == 'High Pass':
-        mask[:crow - cutoff, :] = 1
-        mask[crow + cutoff:, :] = 1
-        mask[:, :ccol - cutoff] = 1
-        mask[:, ccol + cutoff:] = 1
+        mask.fill(1)
+        mask[crow-cutoff:crow+cutoff, ccol-cutoff:ccol+cutoff] = 0
     
     filtered_dft = dft_shift * mask
     dft_ishift = np.fft.ifftshift(filtered_dft)
