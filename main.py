@@ -15,34 +15,7 @@ class ImageProcessing(ImageProcessingUI):
         # Default image
         self.image = None
         self.processed_image = None
-        self.original_histogram = None
-        self.original_red_histogram = None
-        self.original_green_histogram = None
-        self.original_blue_histogram = None
-    
-        self.processed_histogram = None
-        self.processed_red_histogram = None
-        self.processed_green_histogram = None
-        self.processed_blue_histogram = None
-
-        self.original_pdf = None
-        self.original_cdf = None
-        self.original_red_pdf = None
-        self.original_red_cdf = None
-        self.original_green_pdf = None
-        self.original_green_cdf = None
-        self.original_blue_pdf = None
-        self.original_blue_cdf = None
-
-        self.processed_pdf = None
-        self.processed_cdf = None
-        self.processed_red_pdf = None
-        self.processed_red_cdf = None
-        self.processed_green_pdf = None
-        self.processed_green_cdf = None
-        self.processed_blue_pdf = None
-        self.processed_blue_cdf = None 
-
+        
         # Initialize variables
         self.first_image = None
         self.second_image = None
@@ -55,6 +28,7 @@ class ImageProcessing(ImageProcessingUI):
         self.add_noise_button.clicked.connect(self.add_noise)
         self.apply_filter_button.clicked.connect(self.apply_filter)
         self.edge_button.clicked.connect(self.detect_edges)
+        self.hist_button.clicked.connect(self.drow_histogram)
         self.normalize_button.clicked.connect(self.normalize_image)
         self.equalize_button.clicked.connect(self.equalize_image)
         self.grayscale_button.clicked.connect(self.convert_image)
@@ -73,8 +47,8 @@ class ImageProcessing(ImageProcessingUI):
         """Load an image from file."""
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.xpm *.jpg *.bmp *.gif *.tif)")
         if file_path:
-            self.image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
-            self.processed_image = self.image.copy()
+            self.image = cv2.imread(file_path)
+            self.processed_image = None
             self.processed_label.clear()
             self.processed_label.setText("Processed Image")
             self.update_display()
@@ -90,20 +64,6 @@ class ImageProcessing(ImageProcessingUI):
             self.display_image(self.image, self.original_label)
         if self.processed_image is not None:
             self.display_image(self.processed_image, self.processed_label)
-        self.original_histogram = f.compute_histogram(self.image)
-        self.processed_histogram = f.compute_histogram(self.processed_image)
-        self.original_pdf = f.compute_distribution_curve(self.image, self.original_histogram)
-        self.processed_pdf = f.compute_distribution_curve(self.processed_image, self.processed_histogram)
-        self.original_cdf = f.compute_cumulative_distribution_function(self.image, self.original_histogram)
-        self.processed_cdf = f.compute_cumulative_distribution_function(self.processed_image, self.processed_histogram)
-        draw_2d_array(self.original_histogram, self.original_curve_plots, 0, title="Original Histogram")
-        draw_2d_array(self.processed_histogram, self.equalized_curve_plots, 0,title= "Processed Histogram")
-        draw_2d_array(self.original_pdf, self.original_curve_plots, 1,title= "Original PDF")
-        draw_2d_array(self.processed_pdf, self.equalized_curve_plots, 1, title="Processed PDF")
-        draw_2d_array(self.original_cdf, self.original_curve_plots, 2, title="Original CDF")
-        draw_2d_array(self.processed_cdf, self.equalized_curve_plots, 2, title="Processed CDF")
-        self.original_canvas.draw()
-        self.equalized_canvas.draw()
     
     def display_image(self, img, label):
         """Display an image in a QLabel."""
@@ -175,7 +135,24 @@ class ImageProcessing(ImageProcessingUI):
 
         self.processed_image = edges
         self.update_display()
-    
+
+    def drow_histogram(self):
+        self.check_processed_image()
+        original_image = f.gray_image(self.image)
+        original_histogram = f.compute_histogram(original_image)
+        processed_histogram = f.compute_histogram(self.processed_image)
+        original_pdf = f.compute_distribution_curve(original_image, original_histogram)
+        processed_pdf = f.compute_distribution_curve(self.processed_image, processed_histogram)
+        original_cdf = f.compute_cumulative_distribution_function(original_image, original_histogram)
+        processed_cdf = f.compute_cumulative_distribution_function(self.processed_image, processed_histogram)
+        draw_2d_array(original_histogram, self.original_curve_plots, 0, title="Original Histogram")
+        draw_2d_array(processed_histogram, self.equalized_curve_plots, 0,title= "Processed Histogram")
+        draw_2d_array(original_pdf, self.original_curve_plots, 1,title= "Original PDF")
+        draw_2d_array(processed_pdf, self.equalized_curve_plots, 1, title="Processed PDF")
+        draw_2d_array(original_cdf, self.original_curve_plots, 2, title="Original CDF")
+        draw_2d_array(processed_cdf, self.equalized_curve_plots, 2, title="Processed CDF")
+        self.original_canvas.draw()
+        self.equalized_canvas.draw()
 
     def normalize_image(self):
         self.check_processed_image()
@@ -187,7 +164,7 @@ class ImageProcessing(ImageProcessingUI):
     def equalize_image(self):
         self.check_processed_image()
         image  = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
-        img = f.gray_image(image) if len(image) == 3 else image
+        img = f.gray_image(image) if len(image.shape) == 3 else image
         hist = f.compute_histogram(img)
         normalized_cdf = f.compute_cumulative_distribution_function(img, hist)
         equalized_image = f.equalize_image(img, normalized_cdf)
@@ -197,7 +174,7 @@ class ImageProcessing(ImageProcessingUI):
     def convert_image(self):
         self.check_processed_image()
         image = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
-        if len(image) == 2:
+        if len(image.shape) == 2:
             QMessageBox.warning(self, "Error", "The image is already in grayscale.")
         else:
             self.processed_image = f.gray_image(image)
