@@ -84,16 +84,16 @@ def apply_filter(image, kernel):
 
     return filtered_image
 
-def average_filter( image, kernel_size=3):
+def average_filter(image, kernel_size = 3):
     kernel = np.ones((kernel_size, kernel_size)) / (kernel_size ** 2)
-    return apply_filter(image, kernel)
+    return apply_filter(image, kernel).astype(np.uint8)
 
 def gaussian_filter( image, kernel_size=3, sigma=1):
     ax = np.linspace(-(kernel_size // 2), kernel_size // 2, kernel_size)
     gauss = np.exp(-0.5 * np.square(ax) / np.square(sigma))
     kernel = np.outer(gauss, gauss)
     kernel /= np.sum(kernel)
-    return apply_filter(image, kernel)
+    return apply_filter(image, kernel).astype(np.uint8)
 
 
 def median_filter(image, kernel_size=3):
@@ -267,11 +267,9 @@ import cv2
 import numpy as np
 
 def gray_image(image):
-
-    if len(image.shape) == 3:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    return image
+    h, w = image.shape[:2]
+    converted_image = convert_to_grayscale(image)[0]
+    return converted_image.reshape(h, w)
 
 
 def recover_rgb_image(equalized_red_channel, equalized_green_channel, equalized_blue_channel):

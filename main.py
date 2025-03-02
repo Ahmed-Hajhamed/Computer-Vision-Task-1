@@ -148,7 +148,7 @@ class ImageProcessing(ImageProcessingUI):
         if filter_type == "Average":
             filtered_image = f.average_filter(image, kernel_size)
         elif filter_type == "Gaussian":
-            filtered_image = f.gaussian_filter(image, kernel_size, 1)
+            filtered_image = f.gaussian_filter(image, kernel_size, 3)
         elif filter_type == "Median":
             filtered_image = f.median_filter(image, kernel_size)
         
