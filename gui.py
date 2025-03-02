@@ -59,8 +59,6 @@ class ImageProcessingUI(QMainWindow):
         self.setGeometry(100, 100, 1200, 800)
 
         # Main layout
-        # main_widget = QWidget(self)
-        # self.setCentralWidget(main_widget)
         main_layout = QHBoxLayout()  
 
         # Left Panel (Controls)
@@ -104,23 +102,15 @@ class ImageProcessingUI(QMainWindow):
     def init_left_panel(self, layout):
         """Initialize the left panel with controls and sliders."""
         # Load Image Button
-        layout_load = QHBoxLayout()
 
         self.load_button = QPushButton("Load Image")
-        layout_load.addWidget(self.load_button)
-
         self.rest_button = QPushButton("Reset Image")
-        layout_load.addWidget(self.rest_button)
-
-        layout.addLayout(layout_load)
+        layout.addLayout(horizontal_layout_maker([self.load_button, self.rest_button]))
 
         #process on 
-        choice_layout = QHBoxLayout()
         self.process_combo = QComboBox()
         self.process_combo.addItems(["Original", "Processed"])
-        choice_layout.addWidget(QLabel("Process on:"))
-        choice_layout.addWidget(self.process_combo)
-        layout.addLayout(choice_layout)
+        layout.addLayout(horizontal_layout_maker([QLabel("Process on:"), self.process_combo]))
 
         # Noise Addition
         self.noise_combo = QComboBox()
@@ -128,13 +118,10 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(QLabel("Add Noise:"))
         layout.addWidget(self.noise_combo)
 
-        noise_slider_layout = QHBoxLayout()
         self.noise_slider = create_slider(0, 100, 50)
         self.noise_slider.valueChanged.connect(lambda value: update_slider_label(value, self.noise_value_label))
         self.noise_value_label = QLabel("50")
-        noise_slider_layout.addWidget(self.noise_slider)
-        noise_slider_layout.addWidget(self.noise_value_label)
-        layout.addLayout(noise_slider_layout)
+        layout.addLayout(horizontal_layout_maker([self.noise_slider, self.noise_value_label]))
 
         self.add_noise_button = QPushButton("Add Noise")
         layout.addWidget(self.add_noise_button)
@@ -145,14 +132,11 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(QLabel("Low Pass Filter:"))
         layout.addWidget(self.filter_combo)
 
-        filter_slider_layout = QHBoxLayout()
         self.filter_slider = create_slider(3, 15, 5)
         self.filter_slider.setSingleStep(2)
         self.filter_slider.valueChanged.connect(lambda value: update_slider_label(value, self.filter_value_label))
         self.filter_value_label = QLabel("5")
-        filter_slider_layout.addWidget(self.filter_slider)
-        filter_slider_layout.addWidget(self.filter_value_label)
-        layout.addLayout(filter_slider_layout)
+        layout.addLayout(horizontal_layout_maker([self.filter_slider, self.filter_value_label]))
 
         self.apply_filter_button = QPushButton("Apply Filter")
         layout.addWidget(self.apply_filter_button)
@@ -192,17 +176,13 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(QLabel("Frequency Domain Filter:"))
         layout.addWidget(self.freq_combo)
         
-        cutoff_slider_layout = QHBoxLayout()
         # Change slider range to percentage of image size (1-50%)
         self.cutoff_slider = create_slider(1, 50, 10)  # Default 10%
         self.cutoff_value_label = QLabel("10%")
         self.cutoff_slider.valueChanged.connect(
             lambda value: self.cutoff_value_label.setText(f"{value}%")
         )
-        cutoff_slider_layout.addWidget(QLabel("Cutoff Radius:"))
-        cutoff_slider_layout.addWidget(self.cutoff_slider)
-        cutoff_slider_layout.addWidget(self.cutoff_value_label)
-        layout.addLayout(cutoff_slider_layout)
+        layout.addLayout(horizontal_layout_maker([QLabel("Cutoff Radius:"), self.cutoff_slider, self.cutoff_value_label]))
 
         self.freq_button = QPushButton("Apply Frequency Filter")
         layout.addWidget(self.freq_button)
@@ -224,8 +204,8 @@ class ImageProcessingUI(QMainWindow):
         self.original_fig = self.original_canvas.figure
         self.original_curve_plots = []
         # Create a 1x3 grid of subfigures
-        for i in range(3):
-            self.original_curve_plots.append(self.original_fig.add_subplot(1, 3, i+1))
+        for i in range(1,4):
+            self.original_curve_plots.append(self.original_fig.add_subplot(1, 3, i))
         self.original_fig.tight_layout()
         layout.addWidget(QLabel("Original Image Analysis"), 0, 0)
         layout.addWidget(self.original_canvas, 1, 0)
@@ -234,8 +214,8 @@ class ImageProcessingUI(QMainWindow):
         self.equalized_canvas = FigureCanvas(Figure(figsize=(5, 4)))
         self.equalized_fig = self.equalized_canvas.figure
         self.equalized_curve_plots = []
-        for i in range(3):
-            self.equalized_curve_plots.append(self.equalized_fig.add_subplot(1, 3, i+1))
+        for i in range(1,4):
+            self.equalized_curve_plots.append(self.equalized_fig.add_subplot(1, 3, i))
         self.equalized_fig.tight_layout()
         layout.addWidget(QLabel("Equalized Image Analysis"), 2, 0)
         layout.addWidget(self.equalized_canvas, 3, 0)
@@ -305,47 +285,33 @@ class ImageProcessingUI(QMainWindow):
         threshold_layout = QVBoxLayout()
         
         # Radio buttons in horizontal layout
-        radio_layout = QHBoxLayout()
         self.threshold_radio_global = QRadioButton("Global")
         self.threshold_radio_local = QRadioButton("Local")
         self.threshold_radio_global.setChecked(True)
-        radio_layout.addWidget(self.threshold_radio_global)
-        radio_layout.addWidget(self.threshold_radio_local)
+        radio_layout = horizontal_layout_maker([self.threshold_radio_global, self.threshold_radio_local])
         
         # Connect radio buttons to enable/disable sliders
         self.threshold_radio_global.toggled.connect(self.update_threshold_controls)
         self.threshold_radio_local.toggled.connect(self.update_threshold_controls)
         
         # Global threshold slider with label in horizontal layout
-        global_slider_layout = QHBoxLayout()
-        self.threshold_slider = QSlider(Qt.Horizontal)
-        self.threshold_slider.setMinimum(0)
-        self.threshold_slider.setMaximum(255)
-        self.threshold_slider.setValue(127)
+        self.threshold_slider = create_slider(0, 255, 127)
         self.threshold_value = QLabel("127")  # Simplified label
         self.threshold_value.setMinimumWidth(30)  # Ensure label has enough space
         self.threshold_slider.valueChanged.connect(
             lambda: self.threshold_value.setText(str(self.threshold_slider.value()))
         )
-        global_slider_layout.addWidget(QLabel("Global:"))  # Short label
-        global_slider_layout.addWidget(self.threshold_slider)
-        global_slider_layout.addWidget(self.threshold_value)
+        global_slider_layout = horizontal_layout_maker([QLabel("Global:"), self.threshold_slider, self.threshold_value])
         
         # Local threshold slider with label in horizontal layout
-        local_slider_layout = QHBoxLayout()
-        self.local_threshold_slider = QSlider(Qt.Horizontal)
-        self.local_threshold_slider.setMinimum(3)
-        self.local_threshold_slider.setMaximum(31)
-        self.local_threshold_slider.setValue(3)
+        self.local_threshold_slider = create_slider(3, 31, 3)
         self.local_threshold_slider.setSingleStep(2)
         self.local_threshold_value = QLabel("3")  # Simplified label
         self.local_threshold_value.setMinimumWidth(30)  # Ensure label has enough space
         self.local_threshold_slider.valueChanged.connect(
             lambda: self.local_threshold_value.setText(str(self.local_threshold_slider.value()))
         )
-        local_slider_layout.addWidget(QLabel("Window:"))  # Short label
-        local_slider_layout.addWidget(self.local_threshold_slider)
-        local_slider_layout.addWidget(self.local_threshold_value)
+        local_slider_layout = horizontal_layout_maker([QLabel("Window:"), self.local_threshold_slider, self.local_threshold_value])
         
         # Apply button
         self.threshold_button = QPushButton("Apply Threshold")
@@ -376,6 +342,12 @@ class ImageProcessingUI(QMainWindow):
 def update_slider_label(value, label):
         """Update the label with the slider's current value."""
         label.setText(str(value))
+
+def horizontal_layout_maker(widgets):
+    layout = QHBoxLayout()
+    for widget in widgets:
+        layout.addWidget(widget)
+    return layout
 
 # Draw a sample 2D array in the first subfigure
 # This method can be called whenever you want to update the plot
