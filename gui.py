@@ -1,11 +1,9 @@
-from random import choice
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QComboBox, QSlider, QLabel, QGridLayout, QRadioButton, QStackedWidget, QFrame, QGroupBox
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
 from qt_material import apply_stylesheet
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure

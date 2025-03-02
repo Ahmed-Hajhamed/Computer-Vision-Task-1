@@ -1,4 +1,3 @@
-from email.mime import image
 import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
