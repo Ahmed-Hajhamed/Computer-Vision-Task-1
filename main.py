@@ -164,7 +164,7 @@ class ImageProcessing(ImageProcessingUI):
     def equalize_image(self):
         self.check_processed_image()
         image  = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
-        img = f.gray_image(image) if len(image) == 3 else image
+        img = f.gray_image(image) if len(image.shape) == 3 else image
         hist = f.compute_histogram(img)
         normalized_cdf = f.compute_cumulative_distribution_function(img, hist)
         equalized_image = f.equalize_image(img, normalized_cdf)
