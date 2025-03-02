@@ -1,3 +1,4 @@
+import cv2
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
@@ -8,9 +9,9 @@ def add_uniform_noise( image, intensity):
     noise = np.random.uniform(-intensity * 255, intensity * 255, image.shape)
     return np.clip(image + noise, 0, 255).astype(np.uint8)
 
-def add_gaussian_noise( image, intensity):
-    sigma = intensity * 255
-    noise = np.random.normal(0, sigma, image.shape)
+def add_gaussian_noise( image, sigma):
+    # sigma = intensity * 255
+    noise = np.random.normal(0, sigma * 255, image.shape)
     return np.clip(image + noise, 0, 255).astype(np.uint8)
 
 def add_salt_pepper_noise( image, prob=0.05):
@@ -21,14 +22,67 @@ def add_salt_pepper_noise( image, prob=0.05):
     noisy_image[pepper_mask] = 0
     return noisy_image
 
-def apply_filter( image, kernel):
-    k_size = kernel.shape[0] // 2
-    padded_image = np.pad(image, k_size, mode='reflect')
-    window_shape = (image.shape[0], image.shape[1], kernel.shape[0], kernel.shape[1])
-    strides = (padded_image.strides[0], padded_image.strides[1], padded_image.strides[0], padded_image.strides[1])
-    windows = as_strided(padded_image, shape=window_shape, strides=strides, writeable=False)
-    filtered_image = np.sum(windows * kernel, axis=(2, 3))
-    return np.clip(filtered_image, 0, 255).astype(np.uint8)
+
+def convolve1(image, kernel):
+    """
+    Manually applies a convolutional filter to an image.
+
+    :param image: Input image as a 2D NumPy array (grayscale).
+    :param kernel: Kernel (filter) as a 2D NumPy array.
+    :return: Filtered image as a 2D NumPy array.
+    """
+    # Get dimensions
+    image_height, image_width = image.shape
+    kernel_height, kernel_width = kernel.shape
+
+    # Compute padding size
+    pad_h = kernel_height // 2
+    pad_w = kernel_width // 2
+
+    # Pad the image with zeros
+    padded_image = np.pad(image, ((pad_h, pad_h), (pad_w, pad_w)), mode='constant', constant_values=0)
+
+    # Create output array
+    output = np.zeros((image_height, image_width))
+
+    # Perform convolution
+    for i in range(image_height):
+        for j in range(image_width):
+            # Extract region of interest
+            region = padded_image[i:i + kernel_height, j:j + kernel_width]
+            # Element-wise multiplication and summation
+            output[i, j] = np.sum(region * kernel)
+
+    return output
+
+
+def apply_filter(image, kernel):
+    """
+    Applies a convolutional filter to an image.
+
+    :param image: Input image as a NumPy array.
+    :param kernel: Kernel (filter) as a 2D NumPy array.
+    :return: Filtered image as a NumPy array.
+    """
+    # if np.sum(kernel) != 0:  # Normalize only if sum is nonzero
+    #     kernel = kernel / np.sum(kernel)
+
+    if image.ndim == 3 and image.shape[2] == 3:  # Ensure exactly 3 channels (RGB)
+        print("Processing RGB image with shape:", image.shape)
+        filtered_image = np.zeros_like(image)
+        for i in range(3):  # Process each channel separately
+            filtered_image[:, :, i] = convolve1(image[:, :, i], kernel)
+
+    # elif  image.ndim == 3 and image.shape[2] == 3:  # Handle grayscale with extra channel
+    #     print("Processing single-channel grayscale image.")
+    #     filtered_image = convolve(image[:, :, 0], kernel)
+    #     filtered_image = filtered_image[:, :, np.newaxis]  # Keep the same shape
+
+    elif image.ndim == 2:
+        print("Processing standard grayscale image with shape:", image.shape)
+        filtered_image = convolve1(image, kernel)
+
+    return filtered_image
 
 def average_filter( image, kernel_size=3):
     kernel = np.ones((kernel_size, kernel_size)) / (kernel_size ** 2)
@@ -41,35 +95,67 @@ def gaussian_filter( image, kernel_size=3, sigma=1):
     kernel /= np.sum(kernel)
     return apply_filter(image, kernel)
 
-def median_filter( image, kernel_size=3):
+
+def median_filter(image, kernel_size=3):
+    """
+    Applies a median filter to a grayscale or RGB image.
+
+    :param image: Input image as a NumPy array (H, W) for grayscale or (H, W, 3) for RGB.
+    :param kernel_size: Size of the median filter kernel (must be odd).
+    :return: Filtered image as a NumPy array.
+    """
     kernel_size = int(kernel_size)
-    k_size = kernel_size // 2
-    padded_image = np.pad(image, k_size, mode='reflect')
+    if kernel_size % 2 == 0:
+        raise ValueError("Kernel size must be an odd number!")
+
+    k_size = kernel_size // 2  # Compute padding size
+
+    # Handle both grayscale and RGB images
+    if len(image.shape) == 3:  # RGB Image
+        filtered_image = np.zeros_like(image)
+        for c in range(image.shape[2]):  # Apply separately for each channel
+            filtered_image[:, :, c] = apply_median(image[:, :, c], kernel_size, k_size)
+    else:  # Grayscale Image
+        filtered_image = apply_median(image, kernel_size, k_size)
+
+    return filtered_image.astype(np.uint8)
+
+
+def apply_median(image, kernel_size, k_size):
+    """
+    Helper function to apply a median filter to a single-channel image.
+    """
+    padded_image = np.pad(image, k_size, mode='reflect')  # Reflective padding
+
+    # Use as_strided to extract sliding windows
     window_shape = (image.shape[0], image.shape[1], kernel_size, kernel_size)
     strides = (padded_image.strides[0], padded_image.strides[1], padded_image.strides[0], padded_image.strides[1])
     windows = as_strided(padded_image, shape=window_shape, strides=strides, writeable=False)
-    filtered_image = np.median(windows, axis=(2, 3))
-    return filtered_image.astype(np.uint8)
+
+    # Compute median over the kernel window
+    return np.median(windows, axis=(2, 3))
 
 def sobel_edge_detection(image):
-    img = image.astype('float64')
+    # img = image.astype('float64')
+    image = gaussian_filter(image, 3)
     sobel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
     sobel_y = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
-    grad_x = apply_filter(img, sobel_x)
-    grad_y = apply_filter(img, sobel_y)
+    grad_x = apply_filter(image, sobel_x)
+    grad_y = apply_filter(image, sobel_y)
     magnitude = np.sqrt(grad_x ** 2 + grad_y ** 2)
     magnitude = magnitude * (255.0 / magnitude.max())
 
     # Apply thresholding
-    threshold = magnitude.mean() * 1.7
+    threshold = magnitude.mean() * 0.5
     magnitude[magnitude < threshold] = 0
     return np.clip(magnitude, 0, 255).astype(np.uint8)
 
 def roberts_edge_detection(image):
-    img = image.astype('float64')
+    # img = image.astype('float64')
+    image = gaussian_filter(image, 3)
     kernel_x = np.array([[1, 0], [0, -1]])
     kernel_y = np.array([[0, 1], [-1, 0]])
-    padded_img = np.pad(img, ((0, 1), (0, 1)), mode='edge')
+    padded_img = np.pad(image, ((0, 1), (0, 1)), mode='edge')
     grad_x = apply_filter(padded_img, kernel_x)
     grad_y = apply_filter(padded_img, kernel_y)
     # Calculate magnitude and normalize
@@ -83,19 +169,23 @@ def roberts_edge_detection(image):
     return np.clip(magnitude, 0, 255).astype(np.uint8)
 
 def prewitt_edge_detection(image):
-    img = image.astype('float64')
+    # img = image.astype('float64')
+    image = gaussian_filter(image, 3)
     kernel_x = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
     kernel_y = np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]])
-    grad_x = apply_filter(img, kernel_x)
-    grad_y = apply_filter(img, kernel_y)
+    grad_x = apply_filter(image, kernel_x)
+    grad_y = apply_filter(image, kernel_y)
     # Calculate magnitude and normalize
     magnitude = np.sqrt(grad_x ** 2 + grad_y ** 2)
     magnitude = magnitude * (255.0 / magnitude.max())
 
     # Apply thresholding
-    threshold = magnitude.mean() * 1.7
+    threshold = magnitude.mean() * 0.5
     magnitude[magnitude < threshold] = 0
     return np.clip(magnitude, 0, 255).astype(np.uint8)
+
+def canny_edge_detection(image, low_threshold=50, high_threshold=150):
+    return cv2.Canny(image, low_threshold, high_threshold)
 
 
 # Function for Image Normalization
@@ -168,10 +258,21 @@ def convert_to_grayscale(image):
     gray_image = (0.299 * red_channel + 0.587 * green_channel + 0.114 * blue_channel).astype(np.uint8)
     return gray_image, red_channel, green_channel, blue_channel
 
+# def gray_image(image):
+#
+#     h, w = image.shape[:2]
+#     converted_image = convert_to_grayscale(image)[0]
+#     return converted_image.reshape(h, w)
+import cv2
+import numpy as np
+
 def gray_image(image):
-    h, w = image.shape[:2]
-    converted_image = convert_to_grayscale(image)[0]
-    return converted_image.reshape(h, w)
+
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    return image
+
 
 def recover_rgb_image(equalized_red_channel, equalized_green_channel, equalized_blue_channel):
     equalized_rgb_image = np.stack((equalized_red_channel, equalized_green_channel, equalized_blue_channel), axis=2)
