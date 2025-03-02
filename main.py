@@ -1,3 +1,4 @@
+from email.mime import image
 import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
@@ -5,7 +6,6 @@ from PyQt5.QtCore import Qt
 from  gui import ImageProcessingUI
 import cv2
 from qt_material import apply_stylesheet
-
 import functions as f
 
 
@@ -25,7 +25,7 @@ class ImageProcessing(ImageProcessingUI):
         #connect of main page
         self.load_button.clicked.connect(self.load_image) 
         self.rest_button.clicked.connect(self.rest_image)
-        
+
         self.add_noise_button.clicked.connect(self.add_noise)
         self.apply_filter_button.clicked.connect(self.apply_filter)
         self.edge_button.clicked.connect(self.detect_edges)
@@ -86,7 +86,7 @@ class ImageProcessing(ImageProcessingUI):
         self.check_processed_image()
         noise_type = self.noise_combo.currentText()
         intensity = self.noise_slider.value() / 100.0
-        noisy_image = self.processed_image.copy()
+        noisy_image = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
 
         if noise_type == "Uniform":
             noisy_image = f.add_uniform_noise(noisy_image, intensity)
@@ -103,14 +103,15 @@ class ImageProcessing(ImageProcessingUI):
         self.check_processed_image()
         filter_type = self.filter_combo.currentText()
         kernel_size = self.filter_slider.value()
+        image =  self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
 
         if filter_type == "Average":
-            filtered_image = f.average_filter(self.processed_image, kernel_size)
+            filtered_image = f.average_filter(image, kernel_size)
         elif filter_type == "Gaussian":
-            filtered_image = f.gaussian_filter(self.processed_image, kernel_size, 1)
+            filtered_image = f.gaussian_filter(image, kernel_size, 1)
         elif filter_type == "Median":
-            filtered_image = f.median_filter(self.processed_image, kernel_size)
-        print(filtered_image.shape)
+            filtered_image = f.median_filter(image, kernel_size)
+        
         self.processed_image = filtered_image
         self.update_display()
 
@@ -118,18 +119,19 @@ class ImageProcessing(ImageProcessingUI):
         """Detect edges in the image."""
         self.check_processed_image()
         edge_type = self.edge_combo.currentText()
+        image  = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
 
         if edge_type == "Sobel":
-            edges = f.sobel_edge_detection(self.processed_image)
+            edges = f.sobel_edge_detection(image)
         
         elif edge_type == "Roberts":
-            edges = f.roberts_edge_detection(self.processed_image)
+            edges = f.roberts_edge_detection(image)
 
         elif edge_type == "Prewitt":
-            edges = f.prewitt_edge_detection(self.processed_image)
+            edges = f.prewitt_edge_detection(image)
         
         elif edge_type == "Canny":
-            edges = cv2.Canny(self.processed_image, 100, 200)
+            edges = cv2.Canny(image, 100, 200)
 
         self.processed_image = edges
         self.update_display()
@@ -137,13 +139,15 @@ class ImageProcessing(ImageProcessingUI):
 
     def normalize_image(self):
         self.check_processed_image()
-        normalized_image = f.normalize_image(self.processed_image)
+        image = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
+        normalized_image = f.normalize_image(image)
         self.processed_image = normalized_image
         self.update_display()
 
     def equalize_image(self):
         self.check_processed_image()
-        img = f.gray_image(self.processed_image) if len(self.processed_image.shape) == 3 else self.processed_image
+        image  = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
+        img = f.gray_image(image) if len(image) == 3 else image
         hist = f.compute_histogram(img)
         normalized_cdf = f.compute_cumulative_distribution_function(img, hist)
         equalized_image = f.equalize_image(img, normalized_cdf)
@@ -152,22 +156,24 @@ class ImageProcessing(ImageProcessingUI):
     
     def convert_image(self):
         self.check_processed_image()
-        if len(self.processed_image.shape) == 2:
+        image = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
+        if len(image) == 2:
             QMessageBox.warning(self, "Error", "The image is already in grayscale.")
         else:
-            self.processed_image = f.gray_image(self.processed_image)
+            self.processed_image = f.gray_image(image)
             self.update_display()
 
     def apply_thresholding(self):
         self.check_processed_image()
+        image = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
         if self.threshold_radio_global.isChecked():
             self.processed_image = f.global_threshold(
-                self.processed_image, 
+                image, 
                 self.threshold_slider.value()
             )
         else:
             # Convert to grayscale if needed
-            img = f.gray_image(self.processed_image) if len(self.processed_image.shape) == 3 else self.processed_image
+            img = f.gray_image(image) if len(image.shape) == 3 else image
             # Use local threshold slider value
             window_size = self.local_threshold_slider.value()
             # Ensure window size is odd
@@ -178,9 +184,10 @@ class ImageProcessing(ImageProcessingUI):
 
     def apply_frequency_filter(self):
         self.check_processed_image()
+        image = self.processed_image.copy() if self.process_combo.currentText()== "Processed" else self.image.copy()
         filter_type = self.freq_combo.currentText()
-        image =  f.gray_image(self.processed_image) if len(self.processed_image.shape) == 3 else self.processed_image
-        self.processed_image = f.frequency_filter(image, filter_type, int(self.cutoff_slider.value()))
+        img =  f.gray_image(image) if len(image.shape) == 3 else image
+        self.processed_image = f.frequency_filter(img, filter_type, int(self.cutoff_slider.value()))
         self.update_display()
 
 
@@ -209,12 +216,14 @@ class ImageProcessing(ImageProcessingUI):
         """Create and display the hybrid image."""
         if self.first_image is not None and self.second_image is not None:
             # Resize images to the same size
-            first_resized = cv2.resize(self.first_image, (256, 256))
-            second_resized = cv2.resize(self.second_image, (256, 256))
+            first_resized = f.gray_image(cv2.resize(self.first_image, (256, 256)))
+            second_resized = f.gray_image(cv2.resize(self.second_image, (256, 256)))
 
             # Apply low-pass and high-pass filters
-            low_pass = cv2.GaussianBlur(first_resized, (51, 51), 0)
-            high_pass = second_resized - cv2.GaussianBlur(second_resized, (51, 51), 0)
+            low_pass = f.frequency_filter(first_resized,self.first_image_widget.filters.currentText(), 
+                                          int(self.first_image_widget.slider.value()))
+            high_pass = f.frequency_filter(second_resized,self.second_image_widget.filters.currentText(),
+                                            int(self.second_image_widget.slider.value()))
 
             # Combine images
             hybrid = low_pass + high_pass

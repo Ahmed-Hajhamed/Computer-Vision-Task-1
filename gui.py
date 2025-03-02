@@ -1,3 +1,4 @@
+from random import choice
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
@@ -31,31 +32,26 @@ def create_slider(minimum:int, maximum:int, value:int, horizontal=True):
 
 class image_hybrid:
     def __init__(self):
-        self.image_layout = QVBoxLayout()
+        self.image_layout = QGridLayout()
 
         self.image_label = QLabel("Image")
         self.image_label.setFixedSize(300, 300)
-        self.image_layout.addWidget(self.image_label)
+        self.image_label.setAlignment(Qt.AlignCenter)
+        self.image_layout.addWidget(self.image_label, 0, 0, 1, 2)
 
-        first_h_button_layout = QHBoxLayout()
         self.load_button = QPushButton("Load Image")
         self.load_button.setFixedHeight(30)
-        first_h_button_layout.addWidget(self.load_button)
+        self.image_layout.addWidget(self.load_button, 1, 0)
         
         self.filters = QComboBox()
-        self.filters.addItems(["low filter", "high filter"])
-        first_h_button_layout.addWidget(self.filters)
+        self.filters.addItems(["Low Pass", "High Pass"])
+        self.image_layout.addWidget(self.filters, 1, 1)
 
-        self.image_layout.addLayout(first_h_button_layout)
-        
-        h_slider_layout = QHBoxLayout()
         self.slider = create_slider(0, 255, 128)
-        h_slider_layout.addWidget(self.slider)
+        self.image_layout.addWidget(self.slider, 2, 0, 1, 2)
         self.slider_value = QLabel("128")
         self.slider.valueChanged.connect(lambda value: update_slider_label(value, self.slider_value))
-        h_slider_layout.addWidget(self.slider_value)
-
-        self.image_layout.addLayout(h_slider_layout)
+        self.image_layout.addWidget(self.slider_value, 2, 2)
 
 
 class ImageProcessingUI(QMainWindow):
@@ -119,6 +115,14 @@ class ImageProcessingUI(QMainWindow):
         layout_load.addWidget(self.rest_button)
 
         layout.addLayout(layout_load)
+
+        #process on 
+        choice_layout = QHBoxLayout()
+        self.process_combo = QComboBox()
+        self.process_combo.addItems(["Original", "Processed"])
+        choice_layout.addWidget(QLabel("Process on:"))
+        choice_layout.addWidget(self.process_combo)
+        layout.addLayout(choice_layout)
 
         # Noise Addition
         self.noise_combo = QComboBox()
@@ -274,7 +278,6 @@ class ImageProcessingUI(QMainWindow):
     
     def open_hybrid_page(self):
         """Switch to the hybrid image page."""
-        print("test")
         self.stacked_widget.setCurrentIndex(2)
     
     def open_plot_page(self):
