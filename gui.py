@@ -219,10 +219,24 @@ class ImageProcessingUI(QMainWindow):
         # Original Image Plot
         self.original_canvas = FigureCanvas(Figure(figsize=(5, 4)))
         layout.addWidget(QLabel("Original Image Analysis"), 0, 0)
+        # Create a canvas with 3 subfigures for the original image
+        self.original_canvas = FigureCanvas(Figure(figsize=(5, 4)))
+        self.original_fig = self.original_canvas.figure
+        self.original_curve_plots = []
+        # Create a 1x3 grid of subfigures
+        for i in range(3):
+            self.original_curve_plots.append(self.original_fig.add_subplot(1, 3, i+1))
+        self.original_fig.tight_layout()
+        layout.addWidget(QLabel("Original Image Analysis"), 0, 0)
         layout.addWidget(self.original_canvas, 1, 0)
 
         # Equalized Image Plot
         self.equalized_canvas = FigureCanvas(Figure(figsize=(5, 4)))
+        self.equalized_fig = self.equalized_canvas.figure
+        self.equalized_curve_plots = []
+        for i in range(3):
+            self.equalized_curve_plots.append(self.equalized_fig.add_subplot(1, 3, i+1))
+        self.equalized_fig.tight_layout()
         layout.addWidget(QLabel("Equalized Image Analysis"), 2, 0)
         layout.addWidget(self.equalized_canvas, 3, 0)
 
@@ -232,7 +246,7 @@ class ImageProcessingUI(QMainWindow):
         layout.addWidget(back_button, 4, 0, 1, 1)
 
         self.plot_page.setLayout(layout)
-    
+        
 
     def init_hybrid_page(self):
         layout = QHBoxLayout()
@@ -363,6 +377,22 @@ def update_slider_label(value, label):
         """Update the label with the slider's current value."""
         label.setText(str(value))
 
+# Draw a sample 2D array in the first subfigure
+# This method can be called whenever you want to update the plot
+def draw_2d_array(data, plot, subplot_index=0, cmap='gray', title='2D Array'):
+            """
+            Draw a 2D array in one of the subfigures
+            
+            Parameters:
+            - data: 2D numpy array to display
+            - subplot_index: index of the subplot (0, 1, or 2)
+            - cmap: colormap to use (e.g., 'viridis', 'gray', 'hot')
+            - title: title for the subplot
+            """
+            ax = plot[subplot_index]
+            ax.clear()
+            ax.plot(data)
+            ax.set_title(title)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

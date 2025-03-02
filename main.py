@@ -2,7 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
-from  gui import ImageProcessingUI
+from  gui import ImageProcessingUI, draw_2d_array
 import cv2
 from qt_material import apply_stylesheet
 import functions as f
@@ -15,6 +15,33 @@ class ImageProcessing(ImageProcessingUI):
         # Default image
         self.image = None
         self.processed_image = None
+        self.original_histogram = None
+        self.original_red_histogram = None
+        self.original_green_histogram = None
+        self.original_blue_histogram = None
+    
+        self.processed_histogram = None
+        self.processed_red_histogram = None
+        self.processed_green_histogram = None
+        self.processed_blue_histogram = None
+
+        self.original_pdf = None
+        self.original_cdf = None
+        self.original_red_pdf = None
+        self.original_red_cdf = None
+        self.original_green_pdf = None
+        self.original_green_cdf = None
+        self.original_blue_pdf = None
+        self.original_blue_cdf = None
+
+        self.processed_pdf = None
+        self.processed_cdf = None
+        self.processed_red_pdf = None
+        self.processed_red_cdf = None
+        self.processed_green_pdf = None
+        self.processed_green_cdf = None
+        self.processed_blue_pdf = None
+        self.processed_blue_cdf = None 
 
         # Initialize variables
         self.first_image = None
@@ -46,8 +73,8 @@ class ImageProcessing(ImageProcessingUI):
         """Load an image from file."""
         file_path, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.xpm *.jpg *.bmp *.gif *.tif)")
         if file_path:
-            self.image = cv2.imread(file_path)
-            self.processed_image = None
+            self.image = cv2.imread(file_path, cv2.IMREAD_GRAYSCALE)
+            self.processed_image = self.image.copy()
             self.processed_label.clear()
             self.processed_label.setText("Processed Image")
             self.update_display()
@@ -63,7 +90,21 @@ class ImageProcessing(ImageProcessingUI):
             self.display_image(self.image, self.original_label)
         if self.processed_image is not None:
             self.display_image(self.processed_image, self.processed_label)
-
+        self.original_histogram = f.compute_histogram(self.image)
+        self.processed_histogram = f.compute_histogram(self.processed_image)
+        self.original_pdf = f.compute_distribution_curve(self.image, self.original_histogram)
+        self.processed_pdf = f.compute_distribution_curve(self.processed_image, self.processed_histogram)
+        self.original_cdf = f.compute_cumulative_distribution_function(self.image, self.original_histogram)
+        self.processed_cdf = f.compute_cumulative_distribution_function(self.processed_image, self.processed_histogram)
+        draw_2d_array(self.original_histogram, self.original_curve_plots, 0, title="Original Histogram")
+        draw_2d_array(self.processed_histogram, self.equalized_curve_plots, 0,title= "Processed Histogram")
+        draw_2d_array(self.original_pdf, self.original_curve_plots, 1,title= "Original PDF")
+        draw_2d_array(self.processed_pdf, self.equalized_curve_plots, 1, title="Processed PDF")
+        draw_2d_array(self.original_cdf, self.original_curve_plots, 2, title="Original CDF")
+        draw_2d_array(self.processed_cdf, self.equalized_curve_plots, 2, title="Processed CDF")
+        self.original_canvas.draw()
+        self.equalized_canvas.draw()
+    
     def display_image(self, img, label):
         """Display an image in a QLabel."""
         if len(img.shape) == 2:
