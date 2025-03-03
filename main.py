@@ -45,7 +45,7 @@ class ImageProcessing(ImageProcessingUI):
     
     def load_image(self):
         """Load an image from file."""
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.xpm *.jpg *.bmp *.gif *.tif)")
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open Image File", "", "Images (*.png *.xpm *.jpg *.bmp *.gif *.tif *.jpeg *.bmp *.ppm)")
         if file_path:
             self.image = cv2.imread(file_path)
             self.processed_image = None
@@ -131,7 +131,7 @@ class ImageProcessing(ImageProcessingUI):
             edges = f.prewitt_edge_detection(image)
         
         elif edge_type == "Canny":
-            edges = cv2.Canny(image, 100, 200)
+            edges = f.canny_edge_detection(image)
 
         self.processed_image = edges
         self.update_display()

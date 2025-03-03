@@ -1,6 +1,5 @@
-import cv2
-import numpy as np
 from numpy.lib.stride_tricks import as_strided
+import cv2
 
 
 
@@ -137,6 +136,7 @@ def apply_median(image, kernel_size, k_size):
 
 def sobel_edge_detection(image):
     # img = image.astype('float64')
+    image = convert_to_grayscale(image)[0]
     image = gaussian_filter(image, 3)
     sobel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
     sobel_y = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
@@ -152,6 +152,7 @@ def sobel_edge_detection(image):
 
 def roberts_edge_detection(image):
     # img = image.astype('float64')
+    image = convert_to_grayscale(image)[0]
     image = gaussian_filter(image, 3)
     kernel_x = np.array([[1, 0], [0, -1]])
     kernel_y = np.array([[0, 1], [-1, 0]])
@@ -170,6 +171,7 @@ def roberts_edge_detection(image):
 
 def prewitt_edge_detection(image):
     # img = image.astype('float64')
+    image = convert_to_grayscale(image)[0]
     image = gaussian_filter(image, 3)
     kernel_x = np.array([[-1, 0, 1], [-1, 0, 1], [-1, 0, 1]])
     kernel_y = np.array([[-1, -1, -1], [0, 0, 0], [1, 1, 1]])
@@ -183,6 +185,7 @@ def prewitt_edge_detection(image):
     threshold = magnitude.mean() * 0.5
     magnitude[magnitude < threshold] = 0
     return np.clip(magnitude, 0, 255).astype(np.uint8)
+
 
 def canny_edge_detection(image, low_threshold=50, high_threshold=150):
     return cv2.Canny(image, low_threshold, high_threshold)
@@ -254,8 +257,20 @@ def compute_histogram(image):
     return np.array(histogram)
 
 def convert_to_grayscale(image):
+    """
+    يحوّل الصورة إلى تدرجات الرمادي إذا كانت ملونة،
+    أما إذا كانت رمادية بالفعل، يرجعها كما هي بدون تعديل.
+    """
+    # لو الصورة رمادي فعلًا (تحتوي على قناة واحدة فقط)، رجّعها كما هي
+    if len(image.shape) == 2:
+        return image, None, None, None  # لا يوجد قنوات لون لأن الصورة رمادي بالفعل
+
+    # لو الصورة ملونة، افصل القنوات
     red_channel, green_channel, blue_channel = image[:, :, 0], image[:, :, 1], image[:, :, 2]
+
+    # تحويل الصورة إلى رمادي باستخدام معادلة Y = 0.299R + 0.587G + 0.114B
     gray_image = (0.299 * red_channel + 0.587 * green_channel + 0.114 * blue_channel).astype(np.uint8)
+
     return gray_image, red_channel, green_channel, blue_channel
 
 # def gray_image(image):
