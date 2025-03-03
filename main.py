@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
@@ -23,7 +24,7 @@ class ImageProcessing(ImageProcessingUI):
 
         #connect of main page
         self.load_button.clicked.connect(self.load_image) 
-        self.rest_button.clicked.connect(self.rest_image)
+        self.rest_button.clicked.connect(lambda :self.save_image(self.processed_image))
 
         self.add_noise_button.clicked.connect(self.add_noise)
         self.apply_filter_button.clicked.connect(self.apply_filter)
@@ -40,6 +41,7 @@ class ImageProcessing(ImageProcessingUI):
         self.first_image_widget.load_button.clicked.connect(lambda: self.load_image_for_hybrid(1))
         self.second_image_widget.load_button.clicked.connect(lambda: self.load_image_for_hybrid(2))
         self.create_hybrid_button.clicked.connect(self.create_hybrid_image)
+        self.save_hybrid_button.clicked.connect(lambda: self.save_image(self.hybrid_image))
 
 
     
@@ -53,10 +55,22 @@ class ImageProcessing(ImageProcessingUI):
             self.processed_label.setText("Processed Image")
             self.update_display()
 
-    def rest_image(self):
-        """Reset processed image."""
-        self.processed_image = self.image
-        self.update_display()
+    def save_image(self, image=None):
+        """save processed image."""
+        default_file = os.path.join("results", "procced_image.jpg")  
+        
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Image", default_file, 
+            "JPEG Files (*.jpg);;PNG Files (*.png);;All Files (*)"
+        )
+        if file_path:
+            if image is None:
+                QMessageBox.warning(self, "Error", "No image to save.")
+            else:
+                cv2.imwrite(file_path, image)
+        else:
+            QMessageBox.warning(self, "Error", "No file selected to save the image.")
+
 
     def update_display(self):
         """Update the original and processed image displays."""
@@ -91,7 +105,7 @@ class ImageProcessing(ImageProcessingUI):
         if noise_type == "Uniform":
             noisy_image = f.add_uniform_noise(noisy_image, intensity)
         elif noise_type == "Gaussian":
-            noisy_image = f.add_gaussian_noise(noisy_image, intensity)
+            noisy_image = f.add_gaussian_noise(noisy_image, self.sigma_slider_noise.value())
         elif noise_type == "Salt & Pepper":
             noisy_image = f.add_salt_pepper_noise(noisy_image, intensity)
         
@@ -108,7 +122,7 @@ class ImageProcessing(ImageProcessingUI):
         if filter_type == "Average":
             filtered_image = f.average_filter(image, kernel_size)
         elif filter_type == "Gaussian":
-            filtered_image = f.gaussian_filter(image, kernel_size, 3)
+            filtered_image = f.gaussian_filter(image, kernel_size, self.sigma_slider_filter.value())
         elif filter_type == "Median":
             filtered_image = f.median_filter(image, kernel_size)
         

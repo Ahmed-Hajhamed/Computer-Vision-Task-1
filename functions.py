@@ -10,7 +10,7 @@ def add_uniform_noise( image, intensity):
 
 def add_gaussian_noise( image, sigma):
     # sigma = intensity * 255
-    noise = np.random.normal(0, sigma * 255, image.shape)
+    noise = np.random.normal(0, sigma, image.shape)
     return np.clip(image + noise, 0, 255).astype(np.uint8)
 
 def add_salt_pepper_noise( image, prob=0.05):

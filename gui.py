@@ -48,7 +48,7 @@ class image_hybrid:
         self.slider = create_slider(0, 255, 128)
         self.image_layout.addWidget(self.slider, 2, 0, 1, 2)
         self.slider_value = QLabel("128")
-        self.slider.valueChanged.connect(lambda value: update_slider_label(value, self.slider_value))
+        self.slider.valueChanged.connect(lambda value: update_slider_label(QLabel("Threshold :"), value, self.slider_value))
         self.image_layout.addWidget(self.slider_value, 2, 2)
 
 
@@ -104,7 +104,7 @@ class ImageProcessingUI(QMainWindow):
         # Load Image Button
 
         self.load_button = QPushButton("Load Image")
-        self.rest_button = QPushButton("Reset Image")
+        self.rest_button = QPushButton("Save Image")
         layout.addLayout(horizontal_layout_maker([self.load_button, self.rest_button]))
 
         #process on 
@@ -115,13 +115,22 @@ class ImageProcessingUI(QMainWindow):
         # Noise Addition
         self.noise_combo = QComboBox()
         self.noise_combo.addItems(["Uniform", "Gaussian", "Salt & Pepper"])
-        layout.addWidget(QLabel("Add Noise:"))
-        layout.addWidget(self.noise_combo)
+        self.noise_combo.currentIndexChanged.connect(lambda index: self.enable_controls([self.sigma_slider_noise], index == 1, True))
+        # layout.addWidget(QLabel("Add Noise:"))
+        # layout.addWidget(self.noise_combo)
+        layout.addLayout(horizontal_layout_maker([QLabel("Add Noise :"), self.noise_combo]))
 
         self.noise_slider = create_slider(0, 100, 50)
         self.noise_slider.valueChanged.connect(lambda value: update_slider_label(value, self.noise_value_label))
         self.noise_value_label = QLabel("50")
-        layout.addLayout(horizontal_layout_maker([self.noise_slider, self.noise_value_label]))
+        layout.addLayout(horizontal_layout_maker([QLabel("Intensity :"), self.noise_slider, self.noise_value_label]))
+
+        self.sigma_slider_noise = create_slider(0, 100, 50)
+        self.sigma_slider_noise.valueChanged.connect(lambda value: update_slider_label(value, self.sigma_value_label_noise))
+        self.sigma_value_label_noise = QLabel("50")
+        layout.addLayout(horizontal_layout_maker([QLabel("Sigma :"), self.sigma_slider_noise, self.sigma_value_label_noise]))
+        self.enable_controls([self.sigma_slider_noise, self.sigma_value_label_noise], False)
+
 
         self.add_noise_button = QPushButton("Add Noise")
         layout.addWidget(self.add_noise_button)
@@ -129,14 +138,22 @@ class ImageProcessingUI(QMainWindow):
         # Low Pass Filters
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["Average", "Gaussian", "Median"])
-        layout.addWidget(QLabel("Low Pass Filter:"))
-        layout.addWidget(self.filter_combo)
+        self.filter_combo.currentIndexChanged.connect(lambda index: self.enable_controls([self.sigma_slider_filter], index == 1))
+        # layout.addWidget(QLabel("Low Pass Filter:"))
+        # layout.addWidget(self.filter_combo)
+        layout.addLayout(horizontal_layout_maker([QLabel("Low Pass Filter:"), self.filter_combo]))
 
-        self.filter_slider = create_slider(3, 15, 5)
+        self.filter_slider = create_slider(3, 15, 3)
         self.filter_slider.setSingleStep(2)
         self.filter_slider.valueChanged.connect(lambda value: update_slider_label(value, self.filter_value_label))
-        self.filter_value_label = QLabel("5")
-        layout.addLayout(horizontal_layout_maker([self.filter_slider, self.filter_value_label]))
+        self.filter_value_label = QLabel("3")
+        layout.addLayout(horizontal_layout_maker([QLabel("Kernel Size :"),self.filter_slider, self.filter_value_label]))
+
+        self.sigma_slider_filter = create_slider(0, 100, 50)
+        self.sigma_slider_filter.valueChanged.connect(lambda value: update_slider_label(value, self.sigma_value_label_filter))
+        self.sigma_value_label_filter = QLabel("50")
+        layout.addLayout(horizontal_layout_maker([QLabel("Sigma :"), self.sigma_slider_filter, self.sigma_value_label_filter]))
+        self.enable_controls([self.sigma_slider_filter, self.sigma_value_label_filter], False)
 
         self.apply_filter_button = QPushButton("Apply Filter")
         layout.addWidget(self.apply_filter_button)
@@ -144,8 +161,9 @@ class ImageProcessingUI(QMainWindow):
         # Edge Detection
         self.edge_combo = QComboBox()
         self.edge_combo.addItems(["Sobel", "Roberts", "Prewitt", "Canny"])
-        layout.addWidget(QLabel("Edge Detection:"))
-        layout.addWidget(self.edge_combo)
+        # layout.addWidget(QLabel("Edge Detection:"))
+        # layout.addWidget(self.edge_combo)
+        layout.addLayout(horizontal_layout_maker([QLabel("Edge Detection :"), self.edge_combo]))
 
         self.edge_button = QPushButton("Detect Edges")
         layout.addWidget(self.edge_button)
@@ -173,9 +191,10 @@ class ImageProcessingUI(QMainWindow):
         # Frequency Domain Filters
         self.freq_combo = QComboBox()
         self.freq_combo.addItems(["Low Pass", "High Pass"])
-        layout.addWidget(QLabel("Frequency Domain Filter:"))
-        layout.addWidget(self.freq_combo)
-        
+        # layout.addWidget(QLabel("Frequency Domain Filter:"))
+        # layout.addWidget(self.freq_combo)
+        layout.addLayout(horizontal_layout_maker([QLabel("Frequency Domain Filter :"), self.freq_combo]))
+
         # Change slider range to percentage of image size (1-50%)
         self.cutoff_slider = create_slider(1, 50, 10)  # Default 10%
         self.cutoff_value_label = QLabel("10%")
@@ -249,8 +268,9 @@ class ImageProcessingUI(QMainWindow):
         hybrid_layout = QVBoxLayout()
         
         self.create_hybrid_button = QPushButton("Create Hybrid Image")
+        self.save_hybrid_button = QPushButton("Save Hybrid Image")
         self.create_hybrid_button.setFixedHeight(30)
-        hybrid_layout.addWidget(self.create_hybrid_button)
+        hybrid_layout.addLayout(horizontal_layout_maker([self.create_hybrid_button, self.save_hybrid_button]))
         
         
         self.hybrid_image_label = QLabel("Hybrid Image")
@@ -299,7 +319,7 @@ class ImageProcessingUI(QMainWindow):
         self.threshold_value = QLabel("127")  # Simplified label
         self.threshold_value.setMinimumWidth(30)  # Ensure label has enough space
         self.threshold_slider.valueChanged.connect(
-            lambda: self.threshold_value.setText(str(self.threshold_slider.value()))
+            lambda value: self.threshold_value.setText(str(value))
         )
         global_slider_layout = horizontal_layout_maker([QLabel("Global:"), self.threshold_slider, self.threshold_value])
         
@@ -309,7 +329,7 @@ class ImageProcessingUI(QMainWindow):
         self.local_threshold_value = QLabel("3")  # Simplified label
         self.local_threshold_value.setMinimumWidth(30)  # Ensure label has enough space
         self.local_threshold_slider.valueChanged.connect(
-            lambda: self.local_threshold_value.setText(str(self.local_threshold_slider.value()))
+            lambda value : self.local_threshold_value.setText(str(value))
         )
         local_slider_layout = horizontal_layout_maker([QLabel("Window:"), self.local_threshold_slider, self.local_threshold_value])
         
@@ -338,6 +358,19 @@ class ImageProcessingUI(QMainWindow):
         # Enable local threshold controls if local is selected
         self.local_threshold_slider.setEnabled(self.threshold_radio_local.isChecked())
         self.local_threshold_value.setEnabled(self.threshold_radio_local.isChecked())
+    
+    def enable_controls(self, widgets:list,enable=True, noise=False):
+        """Enable or disable all controls in the UI."""
+        for widget in widgets:
+            if hasattr(widget, "setEnabled"):
+                widget.setEnabled(enable)
+        if noise:
+            self.noise_slider.setEnabled(not enable)
+    
+    def visible_controls(self, widgets:list,visible=True):
+        """Enable or disable all controls in the UI."""
+        for widget in widgets:
+            widget.setVisible(visible)
 
 def update_slider_label(value, label):
         """Update the label with the slider's current value."""
@@ -348,6 +381,7 @@ def horizontal_layout_maker(widgets):
     for widget in widgets:
         layout.addWidget(widget)
     return layout
+
 
 # Draw a sample 2D array in the first subfigure
 # This method can be called whenever you want to update the plot
