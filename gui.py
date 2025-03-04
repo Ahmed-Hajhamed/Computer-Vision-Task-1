@@ -45,10 +45,10 @@ class image_hybrid:
         self.filters.addItems(["Low Pass", "High Pass"])
         self.image_layout.addWidget(self.filters, 1, 1)
 
-        self.slider = create_slider(0, 255, 128)
+        self.slider = create_slider(1, 50, 10) 
         self.image_layout.addWidget(self.slider, 2, 0, 1, 2)
-        self.slider_value = QLabel("128")
-        self.slider.valueChanged.connect(lambda value: update_slider_label(QLabel("Threshold :"), value, self.slider_value))
+        self.slider_value = QLabel("10%")
+        self.slider.valueChanged.connect(lambda value: self.slider_value.setText(f"{value}%"))
         self.image_layout.addWidget(self.slider_value, 2, 2)
 
 
@@ -115,18 +115,17 @@ class ImageProcessingUI(QMainWindow):
         # Noise Addition
         self.noise_combo = QComboBox()
         self.noise_combo.addItems(["Uniform", "Gaussian", "Salt & Pepper"])
-        self.noise_combo.currentIndexChanged.connect(lambda index: self.enable_controls([self.sigma_slider_noise], index == 1, True))
-        # layout.addWidget(QLabel("Add Noise:"))
-        # layout.addWidget(self.noise_combo)
+        self.noise_combo.currentIndexChanged.connect(lambda index: self.enable_controls([self.sigma_slider_noise, 
+                                                                                         self.sigma_value_label_noise], index == 1, True))
         layout.addLayout(horizontal_layout_maker([QLabel("Add Noise :"), self.noise_combo]))
 
         self.noise_slider = create_slider(0, 100, 50)
-        self.noise_slider.valueChanged.connect(lambda value: update_slider_label(value, self.noise_value_label))
-        self.noise_value_label = QLabel("50")
+        self.noise_slider.valueChanged.connect(lambda value: self.noise_value_label.setText(f"{value}%"))
+        self.noise_value_label = QLabel("50%")
         layout.addLayout(horizontal_layout_maker([QLabel("Intensity :"), self.noise_slider, self.noise_value_label]))
 
         self.sigma_slider_noise = create_slider(0, 100, 50)
-        self.sigma_slider_noise.valueChanged.connect(lambda value: update_slider_label(value, self.sigma_value_label_noise))
+        self.sigma_slider_noise.valueChanged.connect(lambda value: self.sigma_value_label_noise.setText(str(value)))
         self.sigma_value_label_noise = QLabel("50")
         layout.addLayout(horizontal_layout_maker([QLabel("Sigma :"), self.sigma_slider_noise, self.sigma_value_label_noise]))
         self.enable_controls([self.sigma_slider_noise, self.sigma_value_label_noise], False)
@@ -138,19 +137,18 @@ class ImageProcessingUI(QMainWindow):
         # Low Pass Filters
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["Average", "Gaussian", "Median"])
-        self.filter_combo.currentIndexChanged.connect(lambda index: self.enable_controls([self.sigma_slider_filter], index == 1))
-        # layout.addWidget(QLabel("Low Pass Filter:"))
-        # layout.addWidget(self.filter_combo)
+        self.filter_combo.currentIndexChanged.connect(lambda index: self.enable_controls([self.sigma_slider_filter, 
+                                                                                          self.sigma_value_label_filter], index == 1))
         layout.addLayout(horizontal_layout_maker([QLabel("Low Pass Filter:"), self.filter_combo]))
 
         self.filter_slider = create_slider(3, 15, 3)
         self.filter_slider.setSingleStep(2)
-        self.filter_slider.valueChanged.connect(lambda value: update_slider_label(value, self.filter_value_label))
+        self.filter_slider.valueChanged.connect(lambda value: self.filter_value_label.setText(str(value)))
         self.filter_value_label = QLabel("3")
         layout.addLayout(horizontal_layout_maker([QLabel("Kernel Size :"),self.filter_slider, self.filter_value_label]))
 
         self.sigma_slider_filter = create_slider(0, 100, 50)
-        self.sigma_slider_filter.valueChanged.connect(lambda value: update_slider_label(value, self.sigma_value_label_filter))
+        self.sigma_slider_filter.valueChanged.connect(lambda value: self.sigma_value_label_filter.setText(str(value)))
         self.sigma_value_label_filter = QLabel("50")
         layout.addLayout(horizontal_layout_maker([QLabel("Sigma :"), self.sigma_slider_filter, self.sigma_value_label_filter]))
         self.enable_controls([self.sigma_slider_filter, self.sigma_value_label_filter], False)
@@ -161,8 +159,6 @@ class ImageProcessingUI(QMainWindow):
         # Edge Detection
         self.edge_combo = QComboBox()
         self.edge_combo.addItems(["Sobel", "Roberts", "Prewitt", "Canny"])
-        # layout.addWidget(QLabel("Edge Detection:"))
-        # layout.addWidget(self.edge_combo)
         layout.addLayout(horizontal_layout_maker([QLabel("Edge Detection :"), self.edge_combo]))
 
         self.edge_button = QPushButton("Detect Edges")
@@ -191,8 +187,6 @@ class ImageProcessingUI(QMainWindow):
         # Frequency Domain Filters
         self.freq_combo = QComboBox()
         self.freq_combo.addItems(["Low Pass", "High Pass"])
-        # layout.addWidget(QLabel("Frequency Domain Filter:"))
-        # layout.addWidget(self.freq_combo)
         layout.addLayout(horizontal_layout_maker([QLabel("Frequency Domain Filter :"), self.freq_combo]))
 
         # Change slider range to percentage of image size (1-50%)
@@ -365,16 +359,12 @@ class ImageProcessingUI(QMainWindow):
             if hasattr(widget, "setEnabled"):
                 widget.setEnabled(enable)
         if noise:
-            self.noise_slider.setEnabled(not enable)
+            self.enable_controls([self.noise_slider, self.noise_value_label], not enable)
     
     def visible_controls(self, widgets:list,visible=True):
         """Enable or disable all controls in the UI."""
         for widget in widgets:
             widget.setVisible(visible)
-
-def update_slider_label(value, label):
-        """Update the label with the slider's current value."""
-        label.setText(str(value))
 
 def horizontal_layout_maker(widgets):
     layout = QHBoxLayout()

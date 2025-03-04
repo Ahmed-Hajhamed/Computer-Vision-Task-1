@@ -1,7 +1,6 @@
 from numpy.lib.stride_tricks import as_strided
 import cv2
-
-
+import numpy as np 
 
 
 def add_uniform_noise( image, intensity):
@@ -9,7 +8,6 @@ def add_uniform_noise( image, intensity):
     return np.clip(image + noise, 0, 255).astype(np.uint8)
 
 def add_gaussian_noise( image, sigma):
-    # sigma = intensity * 255
     noise = np.random.normal(0, sigma, image.shape)
     return np.clip(image + noise, 0, 255).astype(np.uint8)
 
@@ -135,7 +133,6 @@ def apply_median(image, kernel_size, k_size):
     return np.median(windows, axis=(2, 3))
 
 def sobel_edge_detection(image):
-    # img = image.astype('float64')
     image = convert_to_grayscale(image)[0]
     image = gaussian_filter(image, 3)
     sobel_x = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
@@ -257,35 +254,15 @@ def compute_histogram(image):
     return np.array(histogram)
 
 def convert_to_grayscale(image):
-    """
-    يحوّل الصورة إلى تدرجات الرمادي إذا كانت ملونة،
-    أما إذا كانت رمادية بالفعل، يرجعها كما هي بدون تعديل.
-    """
-    # لو الصورة رمادي فعلًا (تحتوي على قناة واحدة فقط)، رجّعها كما هي
     if len(image.shape) == 2:
-        return image, None, None, None  # لا يوجد قنوات لون لأن الصورة رمادي بالفعل
-
-    # لو الصورة ملونة، افصل القنوات
+        return image, None, None, None # Already grayscale
+    
     red_channel, green_channel, blue_channel = image[:, :, 0], image[:, :, 1], image[:, :, 2]
-
-    # تحويل الصورة إلى رمادي باستخدام معادلة Y = 0.299R + 0.587G + 0.114B
     gray_image = (0.299 * red_channel + 0.587 * green_channel + 0.114 * blue_channel).astype(np.uint8)
 
     return gray_image, red_channel, green_channel, blue_channel
 
-# def gray_image(image):
-#
-#     h, w = image.shape[:2]
-#     converted_image = convert_to_grayscale(image)[0]
-#     return converted_image.reshape(h, w)
-import cv2
-import numpy as np
-
-def gray_image(image):
-    h, w = image.shape[:2]
-    converted_image = convert_to_grayscale(image)[0]
-    return converted_image.reshape(h, w)
-
+gray_image = lambda image: convert_to_grayscale(image)[0]
 
 def recover_rgb_image(equalized_red_channel, equalized_green_channel, equalized_blue_channel):
     equalized_rgb_image = np.stack((equalized_red_channel, equalized_green_channel, equalized_blue_channel), axis=2)
